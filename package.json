@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "rm -rf .next && NEXT_DISABLE_WEBPACK_CACHE=1 next dev",
+    "dev:fast": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

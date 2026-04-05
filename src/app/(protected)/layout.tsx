@@ -11,12 +11,13 @@ import {
   Building2,
   Calendar,
   ChevronDown,
-  Filter,
+  Contact,
   LayoutDashboard,
   Layers,
   LogOut,
   Search,
   Settings,
+  Target,
   UserCircle,
   UserRound,
   Users,
@@ -26,9 +27,9 @@ import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Leads", href: "#", icon: Filter },
+  { label: "Leads", href: "/leads", icon: Target },
   { label: "Opportunities", href: "#", icon: Layers },
-  { label: "Contacts", href: "#", icon: UserRound },
+  { label: "Contacts", href: "/contacts", icon: Contact },
   { label: "Activities", href: "#", icon: Calendar },
   { label: "Pipeline", href: "#", icon: Briefcase },
   { label: "Users", href: "/users", icon: Users },
@@ -62,6 +63,14 @@ const getHeaderTitle = (pathname: string) => {
 
   if (pathname.startsWith("/users")) {
     return "Users";
+  }
+
+  if (pathname.startsWith("/contacts")) {
+    return "Contacts";
+  }
+
+  if (pathname.startsWith("/leads")) {
+    return "Leads";
   }
 
   if (pathname.startsWith("/profile")) {
