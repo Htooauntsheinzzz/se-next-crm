@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Search, UserRound, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { Lead, LeadCreateRequest, LeadTagDto, LeadUpdateRequest } from "@/types/lead";
 import type { SalesTeam } from "@/types/team";
 import type { User } from "@/types/user";
@@ -56,6 +56,9 @@ const toNumberOrUndefined = (value: string | undefined) => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const normalizeText = (value: string | null | undefined) =>
+  (value ?? "").trim().toLowerCase();
+
 export const LeadFormModal = ({
   open,
   mode,
@@ -67,12 +70,11 @@ export const LeadFormModal = ({
   onClose,
   onSubmit,
 }: LeadFormModalProps) => {
-  const [contactMode, setContactMode] = useState<"existing" | "new">("new");
-  const [contactSearch, setContactSearch] = useState("");
   const [contactResults, setContactResults] = useState<Contact[]>([]);
   const [contactSearchLoading, setContactSearchLoading] = useState(false);
   const [contactSearchError, setContactSearchError] = useState<string | null>(null);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [contactInputFocused, setContactInputFocused] = useState(false);
 
   const {
     register,
@@ -80,8 +82,6 @@ export const LeadFormModal = ({
     watch,
     setValue,
     reset,
-    clearErrors,
-    setError,
     formState: { errors },
   } = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
@@ -104,39 +104,107 @@ export const LeadFormModal = ({
 
   const selectedTags = watch("tagIds") ?? [];
   const assignedTo = watch("assignedTo");
+  const contactNameValue = watch("contactName") ?? "";
 
   useEffect(() => {
-    reset({
-      contactName: initialLead?.contactName ?? "",
-      email: initialLead?.email ?? "",
-      phone: initialLead?.phone ?? "",
-      companyName: initialLead?.companyName ?? "",
-      website: initialLead?.website ?? "",
-      source: initialLead?.source ?? "",
-      medium: initialLead?.medium ?? "",
-      campaign: initialLead?.campaign ?? "",
-      description: initialLead?.description ?? "",
-      contactId: initialLead?.contactId ? String(initialLead.contactId) : "",
-      assignedTo: initialLead?.assignedTo ? String(initialLead.assignedTo) : "",
-      teamId: initialLead?.teamId ? String(initialLead.teamId) : "",
-      tagIds: initialLead?.tags?.map((tag) => tag.id) ?? [],
-    });
-    setContactMode(initialLead?.contactId ? "existing" : "new");
-    setContactSearch("");
-    setContactResults([]);
-    setContactSearchError(null);
-    setSelectedContact(null);
-  }, [initialLead, reset]);
-
-  useEffect(() => {
-    if (!open || contactMode !== "existing") {
+    if (!open) {
       return;
     }
 
-    const query = contactSearch.trim();
-    if (!query) {
+    if (mode === "create") {
+      reset({
+        contactName: "",
+        email: "",
+        phone: "",
+        companyName: "",
+        website: "",
+        source: "",
+        medium: "",
+        campaign: "",
+        description: "",
+        contactId: "",
+        assignedTo: "",
+        teamId: "",
+        tagIds: [],
+      });
+      setSelectedContact(null);
+    } else {
+      reset({
+        contactName: initialLead?.contactName ?? "",
+        email: initialLead?.email ?? "",
+        phone: initialLead?.phone ?? "",
+        companyName: initialLead?.companyName ?? "",
+        website: initialLead?.website ?? "",
+        source: initialLead?.source ?? "",
+        medium: initialLead?.medium ?? "",
+        campaign: initialLead?.campaign ?? "",
+        description: initialLead?.description ?? "",
+        contactId: initialLead?.contactId ? String(initialLead.contactId) : "",
+        assignedTo: initialLead?.assignedTo ? String(initialLead.assignedTo) : "",
+        teamId: initialLead?.teamId ? String(initialLead.teamId) : "",
+        tagIds: initialLead?.tags?.map((tag) => tag.id) ?? [],
+      });
+
+      setSelectedContact(
+        initialLead?.contactId
+          ? {
+              id: initialLead.contactId,
+              type: "PERSON",
+              fullName: initialLead.contactName,
+              email: initialLead.email,
+              phone: initialLead.phone,
+              mobile: null,
+              jobTitle: null,
+              companyName: initialLead.companyName,
+              parentId: null,
+              parentName: null,
+              website: initialLead.website,
+              linkedinUrl: null,
+              twitterHandle: null,
+              street: null,
+              city: null,
+              state: null,
+              country: null,
+              zipCode: null,
+              notes: null,
+              industry: null,
+              source: null,
+              assignedTo: null,
+              assignedToName: null,
+              teamId: null,
+              active: true,
+              openLeadsCount: 0,
+              openOpportunitiesCount: 0,
+              tags: [],
+              createdAt: initialLead.createdAt,
+            }
+          : null,
+      );
+    }
+
+    setContactResults([]);
+    setContactSearchLoading(false);
+    setContactSearchError(null);
+    setContactInputFocused(false);
+  }, [initialLead, mode, open, reset]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const query = contactNameValue.trim();
+    if (query.length < 2) {
       setContactResults([]);
       setContactSearchError(null);
+      setContactSearchLoading(false);
+      return;
+    }
+
+    if (selectedContact && normalizeText(query) === normalizeText(selectedContact.fullName)) {
+      setContactResults([]);
+      setContactSearchError(null);
+      setContactSearchLoading(false);
       return;
     }
 
@@ -145,13 +213,14 @@ export const LeadFormModal = ({
       try {
         setContactSearchLoading(true);
         setContactSearchError(null);
-        const response = await contactService.search(query);
 
+        const response = await contactService.search(query);
         if (cancelled) {
           return;
         }
 
-        setContactResults((response ?? []).filter((contact) => contact.active));
+        const activeContacts = (response ?? []).filter((contact) => contact.active);
+        setContactResults(activeContacts.slice(0, 8));
       } catch (error) {
         if (cancelled) {
           return;
@@ -169,7 +238,7 @@ export const LeadFormModal = ({
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [contactMode, contactSearch, open]);
+  }, [contactNameValue, open, selectedContact]);
 
   useEffect(() => {
     if (!assignedTo) {
@@ -183,6 +252,22 @@ export const LeadFormModal = ({
 
     setValue("teamId", String(selectedUser.teamId));
   }, [assignedTo, setValue, users]);
+
+  useEffect(() => {
+    const normalized = normalizeText(contactNameValue);
+
+    if (!selectedContact) {
+      if (normalized) {
+        setValue("contactId", "", { shouldDirty: true });
+      }
+      return;
+    }
+
+    if (normalized !== normalizeText(selectedContact.fullName)) {
+      setSelectedContact(null);
+      setValue("contactId", "", { shouldDirty: true });
+    }
+  }, [contactNameValue, selectedContact, setValue]);
 
   useEffect(() => {
     if (!open) {
@@ -205,19 +290,6 @@ export const LeadFormModal = ({
     return null;
   }
 
-  const handleContactModeChange = (mode: "existing" | "new") => {
-    setContactMode(mode);
-    clearErrors("contactId");
-
-    if (mode === "new") {
-      setValue("contactId", "");
-      setSelectedContact(null);
-      setContactSearch("");
-      setContactResults([]);
-      setContactSearchError(null);
-    }
-  };
-
   const handleSelectContact = (contact: Contact) => {
     const companyName =
       contact.type === "COMPANY"
@@ -225,10 +297,9 @@ export const LeadFormModal = ({
         : contact.parentName ?? contact.companyName ?? "";
 
     setSelectedContact(contact);
-    setContactSearch(contact.fullName);
     setContactResults([]);
     setContactSearchError(null);
-    clearErrors("contactId");
+    setContactInputFocused(false);
 
     setValue("contactId", String(contact.id), { shouldDirty: true });
     setValue("contactName", contact.fullName ?? "", { shouldDirty: true, shouldValidate: true });
@@ -249,12 +320,28 @@ export const LeadFormModal = ({
   };
 
   const submit = async (values: LeadFormValues) => {
-    if (contactMode === "existing" && !values.contactId) {
-      setError("contactId", {
-        type: "manual",
-        message: "Please select an existing contact",
-      });
-      return;
+    let resolvedContactId = toNumberOrUndefined(values.contactId);
+
+    if (!resolvedContactId) {
+      const exactLocal = contactResults.find(
+        (contact) => normalizeText(contact.fullName) === normalizeText(values.contactName),
+      );
+
+      if (exactLocal) {
+        resolvedContactId = exactLocal.id;
+      } else {
+        try {
+          const response = await contactService.search(values.contactName.trim());
+          const exactRemote = (response ?? []).find(
+            (contact) => normalizeText(contact.fullName) === normalizeText(values.contactName),
+          );
+          if (exactRemote) {
+            resolvedContactId = exactRemote.id;
+          }
+        } catch {
+          // Ignore search failure during submit and continue with free-text contact.
+        }
+      }
     }
 
     const payload: LeadCreateRequest | LeadUpdateRequest = {
@@ -267,7 +354,7 @@ export const LeadFormModal = ({
       medium: cleanOptional(values.medium),
       campaign: cleanOptional(values.campaign),
       description: cleanOptional(values.description),
-      contactId: toNumberOrUndefined(values.contactId),
+      contactId: resolvedContactId,
       assignedTo: toNumberOrUndefined(values.assignedTo),
       teamId: toNumberOrUndefined(values.teamId),
       tagIds: values.tagIds?.length ? values.tagIds : undefined,
@@ -278,6 +365,12 @@ export const LeadFormModal = ({
 
   const renderError = (message?: string) =>
     message ? <p className="mt-1 text-xs text-red-600">{message}</p> : null;
+
+  const showSuggestionBox =
+    contactInputFocused &&
+    (contactSearchLoading || Boolean(contactSearchError) || contactResults.length > 0 || contactNameValue.trim().length >= 2);
+
+  const contactNameField = register("contactName");
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
@@ -307,102 +400,69 @@ export const LeadFormModal = ({
           <input type="hidden" {...register("contactId")} />
 
           <section>
-            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Contact Source</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleContactModeChange("existing")}
-                className={`inline-flex h-10 items-center justify-center rounded-md border text-sm font-medium transition ${
-                  contactMode === "existing"
-                    ? "border-[#8B6FD0] bg-purple-50 text-[#8B6FD0]"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Select Existing
-              </button>
-              <button
-                type="button"
-                onClick={() => handleContactModeChange("new")}
-                className={`inline-flex h-10 items-center justify-center rounded-md border text-sm font-medium transition ${
-                  contactMode === "new"
-                    ? "border-[#8B6FD0] bg-purple-50 text-[#8B6FD0]"
-                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Create New
-              </button>
-            </div>
-
-            {contactMode === "existing" ? (
-              <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <label className="text-sm font-medium text-slate-700">Search Contact</label>
-                <div className="relative mt-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
-                    value={contactSearch}
-                    onChange={(event) => setContactSearch(event.target.value)}
-                    placeholder="Search by contact name, email, company..."
-                    className="h-10 w-full rounded-md border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
-                  />
-                </div>
-
-                {contactSearchLoading ? (
-                  <p className="mt-2 text-xs text-slate-500">Searching contacts...</p>
-                ) : null}
-                {contactSearchError ? (
-                  <p className="mt-2 text-xs text-red-600">{contactSearchError}</p>
-                ) : null}
-
-                {!contactSearchLoading && contactSearch.trim() && contactResults.length > 0 ? (
-                  <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-md border border-slate-200 bg-white p-1">
-                    {contactResults.map((contact) => (
-                      <button
-                        key={contact.id}
-                        type="button"
-                        onClick={() => handleSelectContact(contact)}
-                        className="w-full rounded-md px-2 py-1.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                      >
-                        <p className="font-medium text-slate-800">{contact.fullName}</p>
-                        <p className="text-xs text-slate-500">
-                          {contact.email || "-"} {contact.companyName ? `• ${contact.companyName}` : ""}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                {selectedContact ? (
-                  <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
-                    <p className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
-                      <UserRound className="h-3.5 w-3.5" />
-                      Selected Contact
-                    </p>
-                    <p className="text-sm font-semibold text-blue-800">{selectedContact.fullName}</p>
-                    <p className="text-xs text-blue-700">{selectedContact.email || "-"}</p>
-                  </div>
-                ) : null}
-
-                {renderError(errors.contactId?.message)}
-              </div>
-            ) : null}
-          </section>
-
-          <section>
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Contact Information
             </h4>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div>
+              <div className="sm:col-span-1">
                 <label className="text-sm font-medium text-slate-700">Contact Name *</label>
-                <input
-                  {...register("contactName")}
-                  disabled={contactMode === "existing"}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
-                  placeholder={
-                    contactMode === "existing" ? "Select contact from above" : "John Anderson"
-                  }
-                />
+                <div className="relative mt-1">
+                  <input
+                    {...contactNameField}
+                    onFocus={() => setContactInputFocused(true)}
+                    onBlur={(event) => {
+                      window.setTimeout(() => setContactInputFocused(false), 120);
+                      contactNameField.onBlur(event);
+                    }}
+                    className="h-10 w-full rounded-md border border-slate-200 pl-3 pr-9 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
+                    placeholder="John Anderson"
+                  />
+                  <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+
+                  {showSuggestionBox ? (
+                    <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 rounded-md border border-slate-200 bg-white shadow-lg">
+                      {contactSearchLoading ? (
+                        <p className="px-3 py-2 text-xs text-slate-500">Searching contacts...</p>
+                      ) : null}
+
+                      {!contactSearchLoading && contactSearchError ? (
+                        <p className="px-3 py-2 text-xs text-red-600">{contactSearchError}</p>
+                      ) : null}
+
+                      {!contactSearchLoading && !contactSearchError && contactResults.length > 0 ? (
+                        <div className="max-h-44 overflow-y-auto py-1">
+                          {contactResults.map((contact) => (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onMouseDown={() => handleSelectContact(contact)}
+                              className="block w-full px-3 py-2 text-left text-sm transition hover:bg-slate-50"
+                            >
+                              <p className="font-medium text-slate-800">{contact.fullName}</p>
+                              <p className="text-xs text-slate-500">
+                                {contact.email || "-"}
+                                {contact.companyName ? ` • ${contact.companyName}` : ""}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {!contactSearchLoading && !contactSearchError && contactNameValue.trim().length >= 2 && contactResults.length === 0 ? (
+                        <p className="px-3 py-2 text-xs text-slate-500">
+                          No matching contact found. Lead will be created with this name.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+
+                {selectedContact ? (
+                  <p className="mt-1 text-xs text-blue-700">
+                    Linked to existing contact: {selectedContact.fullName}
+                  </p>
+                ) : null}
                 {renderError(errors.contactName?.message)}
               </div>
 
