@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Pencil, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, Pencil, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useOpportunity } from "@/hooks/useOpportunity";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
@@ -11,6 +11,7 @@ import { useLostReasons } from "@/hooks/useLostReasons";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { opportunityService } from "@/services/opportunityService";
 import { contactService } from "@/services/contactService";
+import { activityService } from "@/services/activityService";
 import { leadService } from "@/services/leadService";
 import { userService } from "@/services/userService";
 import { teamService } from "@/services/teamService";
@@ -21,8 +22,11 @@ import { StageBadge } from "@/components/opportunities/StageBadge";
 import { EditOpportunityModal } from "@/components/opportunities/EditOpportunityModal";
 import { MarkWonModal } from "@/components/opportunities/MarkWonModal";
 import { MarkLostModal } from "@/components/opportunities/MarkLostModal";
+import { ActivityCard } from "@/components/activities/ActivityCard";
+import { ScheduleActivityModal } from "@/components/activities/ScheduleActivityModal";
 import { getApiMessage } from "@/lib/utils";
 import type { Contact, TagDto } from "@/types/contact";
+import type { Activity, ActivityCreateRequest } from "@/types/activity";
 import type { Lead } from "@/types/lead";
 import type { Opportunity, OpportunityUpdateRequest } from "@/types/opportunity";
 import type { SalesTeam } from "@/types/team";
@@ -41,6 +45,9 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
   const [tab, setTab] = useState<"activities" | "chatter">("activities");
   const [contact, setContact] = useState<Contact | null>(null);
   const [leadFallback, setLeadFallback] = useState<Lead | null>(null);
+  const [opportunityActivities, setOpportunityActivities] = useState<Activity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState<string | null>(null);
   const [teams, setTeams] = useState<SalesTeam[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<TagDto[]>([]);
@@ -48,11 +55,13 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
   const [showEdit, setShowEdit] = useState(false);
   const [showWon, setShowWon] = useState(false);
   const [showLost, setShowLost] = useState(false);
+  const [showScheduleActivity, setShowScheduleActivity] = useState(false);
   const [lostReasonId, setLostReasonId] = useState<number | undefined>(undefined);
   const [lostNote, setLostNote] = useState("");
   const [stateLoading, setStateLoading] = useState(false);
   const [stageLoading, setStageLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [saveActivityLoading, setSaveActivityLoading] = useState(false);
 
   useEffect(() => {
     const loadFormData = async () => {
@@ -132,6 +141,28 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
       active = false;
     };
   }, [opportunity]);
+
+  const fetchOpportunityActivities = async (opportunityId: number) => {
+    try {
+      setActivitiesLoading(true);
+      setActivitiesError(null);
+      const response = await activityService.getForOpportunity(opportunityId);
+      setOpportunityActivities(response);
+    } catch (err) {
+      setActivitiesError(getApiMessage(err, "Failed to load activities"));
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!opportunity?.id) {
+      setOpportunityActivities([]);
+      return;
+    }
+
+    void fetchOpportunityActivities(opportunity.id);
+  }, [opportunity?.id]);
 
   const displayContactName =
     contact?.fullName ??
@@ -255,6 +286,56 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
       toast.error(getApiMessage(err, "Failed to move stage"));
     } finally {
       setStageLoading(false);
+    }
+  };
+
+  const handleScheduleActivity = async (payload: ActivityCreateRequest) => {
+    if (!opportunity) {
+      return;
+    }
+
+    try {
+      setSaveActivityLoading(true);
+      await activityService.create({
+        ...payload,
+        opportunityId: opportunity.id,
+        leadId: undefined,
+      });
+      toast.success("Activity scheduled");
+      setShowScheduleActivity(false);
+      await fetchOpportunityActivities(opportunity.id);
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to schedule activity"));
+    } finally {
+      setSaveActivityLoading(false);
+    }
+  };
+
+  const handleMarkActivityDone = async (activity: Activity) => {
+    if (!opportunity) {
+      return;
+    }
+
+    try {
+      await activityService.markDone(activity.id);
+      toast.success("Activity completed");
+      await fetchOpportunityActivities(opportunity.id);
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to mark activity done"));
+    }
+  };
+
+  const handleUndoActivity = async (activity: Activity) => {
+    if (!opportunity) {
+      return;
+    }
+
+    try {
+      await activityService.undoDone(activity.id);
+      toast.success("Activity marked as to-do");
+      await fetchOpportunityActivities(opportunity.id);
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to undo activity"));
     }
   };
 
@@ -414,8 +495,40 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
             </div>
 
             {tab === "activities" ? (
-              <div className="rounded-lg border border-dashed border-slate-200 p-5 text-sm text-slate-500">
-                Activities integration coming soon.
+              <div className="space-y-3">
+                <div className="flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowScheduleActivity(true)}
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Schedule Activity
+                  </button>
+                </div>
+
+                {activitiesLoading ? (
+                  <div className="h-24 animate-pulse rounded-lg bg-slate-100" />
+                ) : activitiesError ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    {activitiesError}
+                  </div>
+                ) : opportunityActivities.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 p-5 text-sm text-slate-500">
+                    No activities scheduled yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {opportunityActivities.map((activity) => (
+                      <ActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        onMarkDone={handleMarkActivityDone}
+                        onUndo={handleUndoActivity}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-2 text-sm">
@@ -479,6 +592,18 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
         onNoteChange={setLostNote}
         onClose={() => setShowLost(false)}
         onConfirm={handleMarkLost}
+      />
+
+      <ScheduleActivityModal
+        open={showScheduleActivity}
+        loading={saveActivityLoading}
+        users={users}
+        opportunities={opportunity ? [opportunity] : []}
+        leads={[]}
+        initialRecordType="opportunity"
+        initialOpportunityId={opportunity.id}
+        onClose={() => setShowScheduleActivity(false)}
+        onSubmit={handleScheduleActivity}
       />
     </div>
   );

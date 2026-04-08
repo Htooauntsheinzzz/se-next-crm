@@ -30,7 +30,7 @@ const navItems = [
   { label: "Leads", href: "/leads", icon: Target },
   { label: "Opportunities", href: "/opportunities", icon: Layers },
   { label: "Contacts", href: "/contacts", icon: Contact },
-  { label: "Activities", href: "#", icon: Calendar },
+  { label: "Activities", href: "/activities", icon: Calendar },
   { label: "Pipeline", href: "/pipeline", icon: Briefcase },
   { label: "Users", href: "/users", icon: Users },
   { label: "Teams", href: "/teams", icon: Building2 },
@@ -67,6 +67,10 @@ const getHeaderTitle = (pathname: string) => {
 
   if (pathname.startsWith("/contacts")) {
     return "Contacts";
+  }
+
+  if (pathname.startsWith("/activities")) {
+    return "Activities";
   }
 
   if (pathname.startsWith("/opportunities/") && pathname !== "/opportunities") {
