@@ -47,6 +47,37 @@ export const getStageColor = (stage: PipelineStageDto, index: number) => {
   return stageColors[index % stageColors.length];
 };
 
+export const getKanbanColumnBackground = (stage: PipelineStageDto, index: number) => {
+  const name = stage.name.trim().toLowerCase();
+
+  if (stage.isWon || name.includes("won")) {
+    return "#EAF5EF";
+  }
+
+  if (stage.isLost || name.includes("lost")) {
+    return "#F8ECEF";
+  }
+
+  if (name.includes("new")) {
+    return "#EAF1F8";
+  }
+
+  if (name.includes("qualif")) {
+    return "#F3ECF8";
+  }
+
+  if (name.includes("propos")) {
+    return "#F3F1DD";
+  }
+
+  if (name.includes("negot")) {
+    return "#F3ECE3";
+  }
+
+  const fallback = ["#EAF1F8", "#F3ECF8", "#F3F1DD", "#F3ECE3"];
+  return fallback[index % fallback.length];
+};
+
 export const formatCompactCurrency = (value: number | null | undefined) => {
   const safeValue = Number.isFinite(value) ? Number(value) : 0;
 

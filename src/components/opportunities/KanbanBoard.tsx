@@ -17,7 +17,7 @@ export const KanbanBoard = ({
   onAddOpportunity,
 }: KanbanBoardProps) => {
   return (
-    <div className="max-h-[72vh] overflow-auto rounded-xl border border-slate-200 bg-white p-3">
+    <div className="no-scrollbar max-h-[72vh] overflow-x-auto overflow-y-auto rounded-xl border border-slate-200 bg-white p-3">
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="flex min-w-max items-start gap-3">
           {columns.map((column, index) => (

@@ -1,7 +1,11 @@
 import { Plus } from "lucide-react";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { KanbanCard } from "@/components/opportunities/KanbanCard";
-import { formatCurrency, getStageColor } from "@/components/opportunities/opportunityConfig";
+import {
+  formatCurrency,
+  getKanbanColumnBackground,
+  getStageColor,
+} from "@/components/opportunities/opportunityConfig";
 import type { KanbanColumnDto } from "@/services/opportunityService";
 import type { Opportunity } from "@/types/opportunity";
 
@@ -19,13 +23,14 @@ export const KanbanColumn = ({
   onAddOpportunity,
 }: KanbanColumnProps) => {
   const color = getStageColor(column.stage, stageIndex);
+  const columnBackground = getKanbanColumnBackground(column.stage, stageIndex);
   const isDroppable = !column.stage.isLost && !column.stage.isWon;
   const canAddOpportunity = !column.stage.isLost && !column.stage.isWon;
 
   return (
     <div
-      className="flex w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 bg-[#F8FAFC] p-3"
-      style={{ borderLeftWidth: 4, borderLeftColor: color }}
+      className="flex w-[280px] shrink-0 flex-col rounded-xl border border-slate-200 p-3"
+      style={{ backgroundColor: columnBackground }}
     >
       <div className="mb-3 flex items-start justify-between">
         <div>
