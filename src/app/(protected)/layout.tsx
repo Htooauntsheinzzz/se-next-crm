@@ -28,10 +28,10 @@ import { useAuth } from "@/context/AuthContext";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Leads", href: "/leads", icon: Target },
-  { label: "Opportunities", href: "#", icon: Layers },
+  { label: "Opportunities", href: "/opportunities", icon: Layers },
   { label: "Contacts", href: "/contacts", icon: Contact },
   { label: "Activities", href: "#", icon: Calendar },
-  { label: "Pipeline", href: "#", icon: Briefcase },
+  { label: "Pipeline", href: "/pipeline", icon: Briefcase },
   { label: "Users", href: "/users", icon: Users },
   { label: "Teams", href: "/teams", icon: Building2 },
   { label: "Reports", href: "#", icon: BarChart3 },
@@ -67,6 +67,18 @@ const getHeaderTitle = (pathname: string) => {
 
   if (pathname.startsWith("/contacts")) {
     return "Contacts";
+  }
+
+  if (pathname.startsWith("/opportunities/") && pathname !== "/opportunities") {
+    return "Opportunities / Detail";
+  }
+
+  if (pathname.startsWith("/opportunities")) {
+    return "Opportunities";
+  }
+
+  if (pathname.startsWith("/pipeline")) {
+    return "Settings / Pipeline Stages";
   }
 
   if (pathname.startsWith("/leads")) {
