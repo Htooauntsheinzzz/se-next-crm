@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Pencil, Plus, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, Paperclip, Pencil, Plus, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useOpportunity } from "@/hooks/useOpportunity";
 import { usePipelineStages } from "@/hooks/usePipelineStages";
@@ -24,6 +24,8 @@ import { MarkWonModal } from "@/components/opportunities/MarkWonModal";
 import { MarkLostModal } from "@/components/opportunities/MarkLostModal";
 import { ActivityCard } from "@/components/activities/ActivityCard";
 import { ScheduleActivityModal } from "@/components/activities/ScheduleActivityModal";
+import { ChatterPanel } from "@/components/chatter/ChatterPanel";
+import { AttachmentTab } from "@/components/attachments/AttachmentTab";
 import { getApiMessage } from "@/lib/utils";
 import type { Contact, TagDto } from "@/types/contact";
 import type { Activity, ActivityCreateRequest } from "@/types/activity";
@@ -42,7 +44,8 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
   const { opportunity, loading, error, refetch } = useOpportunity(id);
   const { stages } = usePipelineStages();
   const { reasons } = useLostReasons(true);
-  const [tab, setTab] = useState<"activities" | "chatter">("activities");
+  const [tab, setTab] = useState<"activities" | "chatter" | "attachments">("activities");
+  const [attachmentCount, setAttachmentCount] = useState(0);
   const [contact, setContact] = useState<Contact | null>(null);
   const [leadFallback, setLeadFallback] = useState<Lead | null>(null);
   const [opportunityActivities, setOpportunityActivities] = useState<Activity[]>([]);
@@ -492,6 +495,18 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
               >
                 Chatter
               </button>
+              <button
+                type="button"
+                onClick={() => setTab("attachments")}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${
+                  tab === "attachments"
+                    ? "bg-slate-100 text-slate-900"
+                    : "text-slate-500 hover:bg-slate-50"
+                }`}
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+                Attachments ({attachmentCount})
+              </button>
             </div>
 
             {tab === "activities" ? (
@@ -530,23 +545,14 @@ export const OpportunityDetailPage = ({ id }: OpportunityDetailPageProps) => {
                   </div>
                 )}
               </div>
+            ) : tab === "chatter" ? (
+              <ChatterPanel entityType="opportunity" entityId={opportunity.id} />
             ) : (
-              <div className="space-y-2 text-sm">
-                <div className="rounded-lg border border-slate-200 p-3">
-                  <p className="font-semibold text-slate-800">John Smith</p>
-                  <p className="text-xs text-slate-500">note • 2024-03-29 3:20 PM</p>
-                  <p className="mt-1 text-slate-600">
-                    Sent detailed proposal with pricing breakdown.
-                  </p>
-                </div>
-                <div className="rounded-lg border border-slate-200 p-3">
-                  <p className="font-semibold text-slate-800">System</p>
-                  <p className="text-xs text-slate-500">system • 2024-03-28 10:15 AM</p>
-                  <p className="mt-1 text-slate-600">
-                    Stage changed from Qualification to Proposal.
-                  </p>
-                </div>
-              </div>
+              <AttachmentTab
+                entityType="OPPORTUNITY"
+                entityId={opportunity.id}
+                onCountChange={setAttachmentCount}
+              />
             )}
           </div>
         </section>
