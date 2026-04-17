@@ -7,6 +7,9 @@ interface PipelineStageRowProps {
   index: number;
   onEdit: (stage: PipelineStageDto) => void;
   onDelete: (stage: PipelineStageDto) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canReorder?: boolean;
 }
 
 export const PipelineStageRow = ({
@@ -14,13 +17,16 @@ export const PipelineStageRow = ({
   index,
   onEdit,
   onDelete,
+  canEdit = true,
+  canDelete = true,
+  canReorder = true,
 }: PipelineStageRowProps) => {
   const color = getStageColor(stage, index);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-center gap-3">
-        <GripVertical className="h-4 w-4 text-slate-400" />
+        {canReorder && <GripVertical className="h-4 w-4 text-slate-400" />}
         <span className="h-10 w-1.5 rounded-full" style={{ backgroundColor: color }} />
 
         <div className="min-w-0 flex-1">
@@ -50,20 +56,24 @@ export const PipelineStageRow = ({
           <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
             {stage.opportunityCount} opps
           </span>
-          <button
-            type="button"
-            onClick={() => onEdit(stage)}
-            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(stage)}
-            className="rounded-md p-1.5 text-red-400 hover:bg-red-50 hover:text-red-500"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(stage)}
+              className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(stage)}
+              className="rounded-md p-1.5 text-red-400 hover:bg-red-50 hover:text-red-500"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>

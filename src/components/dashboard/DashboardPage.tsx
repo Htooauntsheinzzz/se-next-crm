@@ -12,19 +12,39 @@ import { TopSalespersons } from "@/components/dashboard/TopSalespersons";
 import { TeamPerformance } from "@/components/dashboard/TeamPerformance";
 import { ActivitySummary } from "@/components/dashboard/ActivitySummary";
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import { SalesRepDashboard } from "@/components/dashboard/SalesRepDashboard";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 export const DashboardPage = () => {
-  const { data, loading, refreshing, error, widgetErrors, lastUpdated, refetch } = useDashboard();
+  const { role, loading: roleLoading } = useRoleGuard();
+  const { data, loading, refreshing, error, widgetErrors, lastUpdated, isManagerOrAdmin, refetch } =
+    useDashboard(role);
 
   const lastUpdatedText = lastUpdated
     ? format(lastUpdated, "MMM d, yyyy • hh:mm a")
     : "Not synced yet";
 
-  if (loading) {
+  if (loading || roleLoading) {
     return <DashboardSkeleton />;
   }
 
+  /* ─── Sales Rep: Personal dashboard ─── */
+  if (!isManagerOrAdmin) {
+    return (
+      <div className="space-y-6">
+        <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">My Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Your personal productivity overview</p>
+          </div>
+        </header>
+        <SalesRepDashboard />
+      </div>
+    );
+  }
+
+  /* ─── Admin / Manager: Full dashboard ─── */
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">

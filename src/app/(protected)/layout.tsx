@@ -35,7 +35,6 @@ const navItems = [
   { label: "Users", href: "/users", icon: Users },
   { label: "Teams", href: "/teams", icon: Building2 },
   { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "Settings", href: "#", icon: Settings },
 ] as const;
 
 const getInitials = (firstName?: string, lastName?: string) => {
@@ -158,20 +157,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <nav className="space-y-1 px-3 py-4">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.href !== "#" && pathname.startsWith(item.href);
-
-            if (item.href === "#") {
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/85 transition hover:bg-white/10 hover:text-white"
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </button>
-              );
-            }
+            const isActive = pathname.startsWith(item.href);
 
             return (
               <Link
@@ -254,20 +240,11 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
                   <Link
                     href="/profile"
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     <UserCircle className="h-4 w-4 text-slate-500" />
                     My Profile
-                  </Link>
-
-                  <Link
-                    href="/teams"
-                    className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                    onClick={() => setIsUserMenuOpen(false)}
-                  >
-                    <Settings className="h-4 w-4 text-slate-500" />
-                    Settings
                   </Link>
 
                   <button

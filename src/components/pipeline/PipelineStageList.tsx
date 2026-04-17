@@ -7,6 +7,9 @@ interface PipelineStageListProps {
   onEdit: (stage: PipelineStageDto) => void;
   onDelete: (stage: PipelineStageDto) => void;
   onReorder: (nextIds: number[]) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canReorder?: boolean;
 }
 
 export const PipelineStageList = ({
@@ -14,6 +17,9 @@ export const PipelineStageList = ({
   onEdit,
   onDelete,
   onReorder,
+  canEdit = true,
+  canDelete = true,
+  canReorder = true,
 }: PipelineStageListProps) => {
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
@@ -45,7 +51,7 @@ export const PipelineStageList = ({
             className="space-y-3"
           >
             {stages.map((stage, index) => (
-              <Draggable key={stage.id} draggableId={String(stage.id)} index={index}>
+              <Draggable key={stage.id} draggableId={String(stage.id)} index={index} isDragDisabled={!canReorder}>
                 {(dragProvided) => (
                   <div
                     ref={dragProvided.innerRef}
@@ -57,6 +63,9 @@ export const PipelineStageList = ({
                       index={index}
                       onEdit={onEdit}
                       onDelete={onDelete}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                      canReorder={canReorder}
                     />
                   </div>
                 )}

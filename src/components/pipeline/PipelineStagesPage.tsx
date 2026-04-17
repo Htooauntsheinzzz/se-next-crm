@@ -158,6 +158,9 @@ export const PipelineStagesPage = () => {
               void handleReorder(ids);
             }
           }}
+          canEdit={canManage}
+          canDelete={isAdmin}
+          canReorder={canManage}
         />
       )}
 
