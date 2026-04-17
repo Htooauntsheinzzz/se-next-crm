@@ -34,7 +34,7 @@ const navItems = [
   { label: "Pipeline", href: "/pipeline", icon: Briefcase },
   { label: "Users", href: "/users", icon: Users },
   { label: "Teams", href: "/teams", icon: Building2 },
-  { label: "Reports", href: "#", icon: BarChart3 },
+  { label: "Reports", href: "/reports", icon: BarChart3 },
   { label: "Settings", href: "#", icon: Settings },
 ] as const;
 
@@ -83,6 +83,10 @@ const getHeaderTitle = (pathname: string) => {
 
   if (pathname.startsWith("/pipeline")) {
     return "Settings / Pipeline Stages";
+  }
+
+  if (pathname.startsWith("/reports")) {
+    return "Reports";
   }
 
   if (pathname.startsWith("/leads")) {
