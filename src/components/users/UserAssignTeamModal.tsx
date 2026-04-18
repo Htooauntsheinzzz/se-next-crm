@@ -53,6 +53,8 @@ export const UserAssignTeamModal = ({
       try {
         setLoadingTeams(true);
         setLoadError(null);
+        // TODO: If admins need a specific ?scope=all endpoint for full assignment beyond scoped lists, add it here.
+        // Currently relying on backend role-based scoping which naturally returns all teams for ADMINs.
         const response = await teamService.getAll();
         setTeams(response ?? []);
         setSelectedTeamId(user.teamId ?? "NONE");

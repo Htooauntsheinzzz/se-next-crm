@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Clock3, GitMerge, MoreVertical, Pencil, UserX } from "lucide-react";
 import type { Contact } from "@/types/contact";
+import type { User } from "@/types/user";
+import { canEditContact, canMergeContacts } from "@/lib/auth/rbac";
 
 interface ContactActionsProps {
   contact: Contact;
+  currentUser?: User | null;
   flipUp?: boolean;
   onEdit: (contact: Contact) => void;
   onViewHistory: (contact: Contact) => void;
-  onMerge: (contact: Contact) => void;
+  onMerge?: (contact: Contact) => void;
   onDeactivate: (contact: Contact) => void;
 }
 
@@ -21,6 +24,7 @@ const MENU_MIN_WIDTH = 180;
 
 export const ContactActions = ({
   contact,
+  currentUser,
   flipUp = false,
   onEdit,
   onViewHistory,
@@ -110,6 +114,9 @@ export const ContactActions = ({
     };
   }, [open]);
 
+  const canEdit = currentUser ? canEditContact(currentUser, contact) : false;
+  const canMerge = currentUser ? canMergeContacts(currentUser) : false;
+
   return (
     <div className="relative" ref={containerRef}>
       <button
@@ -132,17 +139,19 @@ export const ContactActions = ({
               }}
               className="app-shell-font z-[80] min-w-[180px] rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg"
             >
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onEdit(contact);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <Pencil className="h-4 w-4" />
-                Edit
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onEdit(contact);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </button>
+              )}
 
               <button
                 type="button"
@@ -156,29 +165,33 @@ export const ContactActions = ({
                 View History
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onMerge(contact);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <GitMerge className="h-4 w-4" />
-                Merge
-              </button>
+              {canMerge && onMerge && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onMerge(contact);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <GitMerge className="h-4 w-4" />
+                  Merge
+                </button>
+              )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onDeactivate(contact);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-50"
-              >
-                <UserX className="h-4 w-4" />
-                Deactivate
-              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onDeactivate(contact);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-50"
+                >
+                  <UserX className="h-4 w-4" />
+                  Deactivate
+                </button>
+              )}
             </div>,
             document.body,
           )

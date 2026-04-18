@@ -17,6 +17,7 @@ import { TeamMemberList } from "@/components/teams/TeamMemberList";
 import { AddMemberModal } from "@/components/teams/AddMemberModal";
 import { SetLeaderModal } from "@/components/teams/SetLeaderModal";
 import { TeamForm } from "@/components/teams/TeamForm";
+import { ForbiddenState } from "@/components/teams/ForbiddenState";
 import { ActivityTabs } from "@/components/activities/ActivityTabs";
 import { ActivityList } from "@/components/activities/ActivityList";
 import { useTeam } from "@/hooks/useTeam";
@@ -35,7 +36,7 @@ interface TeamDetailPageProps {
 type ActiveTab = "members" | "performance" | "activity";
 
 export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
-  const { team, members, loading, error, refetch } = useTeam(teamId);
+  const { team, members, loading, error, isForbidden, refetch } = useTeam(teamId);
   const { currentUser } = useCurrentUser();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("members");
@@ -251,6 +252,10 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
         <div className="h-72 animate-pulse rounded-xl bg-slate-100" />
       </div>
     );
+  }
+
+  if (isForbidden) {
+    return <ForbiddenState />;
   }
 
   if (!team) {

@@ -11,15 +11,32 @@ import { TeamForm } from "@/components/teams/TeamForm";
 import { teamService } from "@/services/teamService";
 import { userService } from "@/services/userService";
 import type { User } from "@/types/user";
+import type { SalesTeam } from "@/types/team";
 import { getApiMessage } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isAdmin as checkAdmin, isManager, isRep } from "@/lib/auth/rbac";
+import { EmptyState } from "@/components/teams/EmptyState";
+import { useRouter } from "next/navigation";
 
 export const TeamListPage = () => {
+  const { currentUser } = useCurrentUser();
+  const router = useRouter();
+  const admin = checkAdmin(currentUser);
+  const manager = isManager(currentUser);
+  const rep = isRep(currentUser);
   const { teams, loading, error, refetch } = useTeams();
   const { isAdmin } = useRoleGuard();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [savingCreate, setSavingCreate] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [leaderUsers, setLeaderUsers] = useState<User[]>([]);
+
+  // Rep Auto-Redirect
+  useEffect(() => {
+    if (rep && currentUser?.teamId) {
+      router.replace(`/teams/${currentUser.teamId}`);
+    }
+  }, [rep, currentUser, router]);
 
   useEffect(() => {
     if (!showCreateModal) {
@@ -82,12 +99,63 @@ export const TeamListPage = () => {
     }
   };
 
+  const onDeleteTeam = async (team: SalesTeam) => {
+    if (team.memberCount > 0) {
+      toast.error("Cannot delete team with active members");
+      return;
+    }
+
+    const confirmed = window.confirm(`Are you sure you want to delete ${team.name}?`);
+    if (!confirmed) return;
+
+    try {
+      await teamService.delete(team.id);
+      toast.success("Team deleted");
+      await refetch();
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to delete team"));
+    }
+  };
+
+  let title = "My Team";
+  let subtitle = "The team you're a member of.";
+  let badgeLabel = currentUser?.teamName || "No team";
+  let badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+  if (admin) {
+    title = "All Teams";
+    subtitle = "Manage all sales teams across the organization.";
+    badgeLabel = "Admin view";
+    badgeClass = "bg-violet-50 text-violet-700 border-violet-200";
+  } else if (manager) {
+    title = "My Teams";
+    subtitle = "Teams you lead or belong to.";
+    badgeLabel = "Manager view";
+    badgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+  }
+
+  // If rep is redirecting, render nothing or a loader to prevent flash
+  if (rep && currentUser?.teamId) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#8B6FD0] border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-[34px] font-semibold leading-tight text-slate-900">Sales Teams</h1>
-          <p className="text-sm text-slate-500">Manage your sales teams and their performance</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-[34px] font-semibold leading-tight text-slate-900">{title}</h1>
+            {badgeLabel && (
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badgeClass}`}>
+                {badgeLabel}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
         </div>
 
         {isAdmin ? (
@@ -115,23 +183,36 @@ export const TeamListPage = () => {
           ))}
         </div>
       ) : teams.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
-          <UsersRound className="mx-auto h-10 w-10 text-slate-300" />
-          <p className="mt-3 text-sm font-medium text-slate-600">No teams created yet</p>
-          {isAdmin ? (
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="mt-4 inline-flex text-sm font-semibold text-[#8B6FD0]"
-            >
-              Create your first team
-            </button>
-          ) : null}
-        </div>
+        admin ? (
+          <EmptyState
+            message="No teams yet. Create your first team to start organizing sales reps."
+            action={
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex h-9 items-center justify-center rounded-md bg-[#8B6FD0] px-4 text-sm font-semibold text-white transition hover:bg-[#7D62C4]"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Team
+              </button>
+            }
+          />
+        ) : manager ? (
+          <EmptyState message="You're not leading or part of any team yet. Ask an admin to assign you." />
+        ) : (
+          <EmptyState message="You haven't been assigned to a team yet. Ask your manager to add you." />
+        )
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {teams.map((team) => (
-            <TeamCard key={team.id} team={team} />
+            <TeamCard
+              key={team.id}
+              team={team}
+              onEdit={(t) => router.push(`/teams/${t.id}`)}
+              onAddMember={(t) => router.push(`/teams/${t.id}`)}
+              onChangeLeader={(t) => router.push(`/teams/${t.id}`)}
+              onDelete={onDeleteTeam}
+            />
           ))}
         </div>
       )}

@@ -13,6 +13,9 @@ import type {
   TagDto,
 } from "@/types/contact";
 import type { User } from "@/types/user";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
+import type { SalesTeam } from "@/types/team";
 
 const industries = [
   "Technology",
@@ -44,6 +47,7 @@ const contactSchema = z.object({
   notes: z.string().max(1000).optional().or(z.literal("")),
   industry: z.string().max(100).optional().or(z.literal("")),
   assignedTo: z.string().optional().or(z.literal("")),
+  teamId: z.string().optional().or(z.literal("")),
   parentId: z.string().optional().or(z.literal("")),
   tagIds: z.array(z.number()).optional(),
 });
@@ -57,6 +61,7 @@ interface ContactFormModalProps {
   users: User[];
   tags: TagDto[];
   companies: Contact[];
+  teams: SalesTeam[];
   initialContact?: Contact | null;
   onClose: () => void;
   onSubmit: (payload: ContactCreateRequest | ContactUpdateRequest) => Promise<void>;
@@ -67,29 +72,42 @@ const cleanOptional = (value: string | undefined) => {
   return safe || undefined;
 };
 
-const mapInitialValues = (contact?: Contact | null): ContactFormValues => ({
-  type: contact?.type ?? "PERSON",
-  fullName: contact?.fullName ?? "",
-  email: contact?.email ?? "",
-  jobTitle: contact?.jobTitle ?? "",
-  companyName: contact?.companyName ?? "",
-  phone: contact?.phone ?? "",
-  mobile: contact?.mobile ?? "",
-  website: contact?.website ?? "",
-  street: contact?.street ?? "",
-  city: contact?.city ?? "",
-  state: contact?.state ?? "",
-  country: contact?.country ?? "",
-  zipCode: contact?.zipCode ?? "",
-  linkedinUrl: contact?.linkedinUrl ?? "",
-  twitterHandle: contact?.twitterHandle ?? "",
-  source: contact?.source ?? "",
-  notes: contact?.notes ?? "",
-  industry: contact?.industry ?? "",
-  assignedTo: contact?.assignedTo ? String(contact.assignedTo) : "",
-  parentId: contact?.parentId ? String(contact.parentId) : "",
-  tagIds: contact?.tags?.map((tag) => tag.id) ?? [],
-});
+const mapInitialValues = (contact?: Contact | null, currentUser?: User | null): ContactFormValues => {
+  let defaultAssignedTo = contact?.assignedTo ? String(contact.assignedTo) : "";
+  let defaultTeamId = contact?.teamId ? String(contact.teamId) : "";
+
+  if (!contact && currentUser) {
+    if (isManager(currentUser) || isRep(currentUser)) {
+      defaultAssignedTo = String(currentUser.id);
+      defaultTeamId = currentUser.teamId ? String(currentUser.teamId) : "";
+    }
+  }
+
+  return {
+    type: contact?.type ?? "PERSON",
+    fullName: contact?.fullName ?? "",
+    email: contact?.email ?? "",
+    jobTitle: contact?.jobTitle ?? "",
+    companyName: contact?.companyName ?? "",
+    phone: contact?.phone ?? "",
+    mobile: contact?.mobile ?? "",
+    website: contact?.website ?? "",
+    street: contact?.street ?? "",
+    city: contact?.city ?? "",
+    state: contact?.state ?? "",
+    country: contact?.country ?? "",
+    zipCode: contact?.zipCode ?? "",
+    linkedinUrl: contact?.linkedinUrl ?? "",
+    twitterHandle: contact?.twitterHandle ?? "",
+    source: contact?.source ?? "",
+    notes: contact?.notes ?? "",
+    industry: contact?.industry ?? "",
+    assignedTo: defaultAssignedTo,
+    teamId: defaultTeamId,
+    parentId: contact?.parentId ? String(contact.parentId) : "",
+    tagIds: contact?.tags?.map((tag) => tag.id) ?? [],
+  };
+};
 
 export const ContactFormModal = ({
   open,
@@ -98,11 +116,16 @@ export const ContactFormModal = ({
   users,
   tags,
   companies,
+  teams,
   initialContact,
   onClose,
   onSubmit,
 }: ContactFormModalProps) => {
-  const initialValues = useMemo(() => mapInitialValues(initialContact), [initialContact]);
+  const { currentUser } = useCurrentUser();
+  const admin = isAdmin(currentUser);
+  const rep = isRep(currentUser);
+  const manager = isManager(currentUser);
+  const initialValues = useMemo(() => mapInitialValues(initialContact, currentUser), [initialContact, currentUser]);
   const {
     register,
     handleSubmit,
@@ -183,7 +206,8 @@ export const ContactFormModal = ({
       source: cleanOptional(values.source),
       notes: cleanOptional(values.notes),
       industry: values.type === "COMPANY" ? cleanOptional(values.industry) : undefined,
-      assignedTo: values.assignedTo ? Number(values.assignedTo) : undefined,
+      assignedTo: rep && currentUser ? Number(currentUser.id) : (values.assignedTo ? Number(values.assignedTo) : undefined),
+      teamId: (rep || manager) && currentUser?.teamId ? Number(currentUser.teamId) : (values.teamId ? Number(values.teamId) : undefined),
       tagIds: values.tagIds?.length ? values.tagIds : undefined,
     };
 
@@ -478,17 +502,47 @@ export const ContactFormModal = ({
                 </div>
                 <div>
                   <label className="text-sm font-medium text-slate-700">Assigned To</label>
-                  <select
-                    {...register("assignedTo")}
-                    className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
-                  >
-                    <option value="">Unassigned</option>
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName}
-                      </option>
-                    ))}
-                  </select>
+                  {rep ? (
+                    <div className="mt-1 flex h-10 items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700 border border-slate-200">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[10px] font-semibold text-slate-700">
+                        {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+                      </span>
+                      <span>Assigned to: You</span>
+                    </div>
+                  ) : (
+                    <select
+                      {...register("assignedTo")}
+                      className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                    >
+                      <option value="">Unassigned</option>
+                      {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.firstName} {user.lastName}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Team</label>
+                  {rep || manager ? (
+                    <div className="mt-1 flex h-10 items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700 border border-slate-200">
+                      <span>{currentUser?.teamName || "Your Team"}</span>
+                    </div>
+                  ) : (
+                    <select
+                      {...register("teamId")}
+                      className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                    >
+                      <option value="">No Team</option>
+                      {teams.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 

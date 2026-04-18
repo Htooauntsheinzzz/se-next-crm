@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { teamService } from "@/services/teamService";
+import { teamService, ForbiddenError } from "@/services/teamService";
 import type { SalesTeam } from "@/types/team";
 import type { User } from "@/types/user";
 import { getApiMessage } from "@/lib/utils";
@@ -11,6 +11,7 @@ interface UseTeamResult {
   members: User[];
   loading: boolean;
   error: string | null;
+  isForbidden: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ export const useTeam = (id: string): UseTeamResult => {
   const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isForbidden, setIsForbidden] = useState(false);
 
   const fetchTeam = useCallback(async () => {
     if (!id) {
@@ -31,6 +33,7 @@ export const useTeam = (id: string): UseTeamResult => {
     try {
       setLoading(true);
       setError(null);
+      setIsForbidden(false);
 
       const [teamResponse, membersResponse] = await Promise.all([
         teamService.getById(id),
@@ -40,7 +43,11 @@ export const useTeam = (id: string): UseTeamResult => {
       setTeam(teamResponse);
       setMembers(membersResponse ?? []);
     } catch (err) {
-      setError(getApiMessage(err, "Failed to load team"));
+      if (err instanceof ForbiddenError) {
+        setIsForbidden(true);
+      } else {
+        setError(getApiMessage(err, "Failed to load team"));
+      }
     } finally {
       setLoading(false);
     }
@@ -50,5 +57,5 @@ export const useTeam = (id: string): UseTeamResult => {
     void fetchTeam();
   }, [fetchTeam]);
 
-  return { team, members, loading, error, refetch: fetchTeam };
+  return { team, members, loading, error, isForbidden, refetch: fetchTeam };
 };

@@ -2,6 +2,8 @@ import { Search } from "lucide-react";
 import type { KanbanState } from "@/types/opportunity";
 import type { PipelineStageDto } from "@/types/pipeline";
 import type { SalesTeam } from "@/types/team";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isRep } from "@/lib/auth/rbac";
 
 interface OpportunityFiltersProps {
   search: string;
@@ -28,6 +30,9 @@ export const OpportunityFilters = ({
   onTeamChange,
   onStateChange,
 }: OpportunityFiltersProps) => {
+  const { currentUser } = useCurrentUser();
+  const rep = isRep(currentUser);
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -58,20 +63,22 @@ export const OpportunityFilters = ({
             ))}
           </select>
 
-          <select
-            value={teamId ?? ""}
-            onChange={(event) =>
-              onTeamChange(event.target.value ? Number(event.target.value) : undefined)
-            }
-            className="h-10 min-w-[130px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
-          >
-            <option value="">All Teams</option>
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
+          {!rep && (
+            <select
+              value={teamId ?? ""}
+              onChange={(event) =>
+                onTeamChange(event.target.value ? Number(event.target.value) : undefined)
+              }
+              className="h-10 min-w-[130px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
+            >
+              <option value="">All Teams</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <select
             value={kanbanState ?? ""}

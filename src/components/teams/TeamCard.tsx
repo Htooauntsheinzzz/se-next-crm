@@ -2,16 +2,28 @@ import Link from "next/link";
 import { Crown, Users as UsersIcon } from "lucide-react";
 import type { SalesTeam } from "@/types/team";
 import { formatCurrency, formatDateLabel } from "@/lib/utils";
+import { TeamCardActions } from "@/components/teams/TeamCardActions";
 
 interface TeamCardProps {
   team: SalesTeam;
+  onEdit: (team: SalesTeam) => void;
+  onDelete: (team: SalesTeam) => void;
+  onAddMember: (team: SalesTeam) => void;
+  onChangeLeader: (team: SalesTeam) => void;
 }
 
-export const TeamCard = ({ team }: TeamCardProps) => {
+export const TeamCard = ({ team, onEdit, onDelete, onAddMember, onChangeLeader }: TeamCardProps) => {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-xl font-semibold text-slate-900">{team.name}</h3>
+        <TeamCardActions
+          team={team}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onAddMember={onAddMember}
+          onChangeLeader={onChangeLeader}
+        />
       </div>
 
       <p className="mt-2 min-h-[40px] text-sm text-slate-500">

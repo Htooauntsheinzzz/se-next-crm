@@ -1,5 +1,6 @@
 import { Mail, MapPin, Phone, Users2 } from "lucide-react";
 import type { Contact, TagDto } from "@/types/contact";
+import type { User } from "@/types/user";
 import { ContactTypeBadge } from "@/components/contacts/ContactTypeBadge";
 import { ContactActions } from "@/components/contacts/ContactActions";
 
@@ -10,10 +11,12 @@ interface ContactTableProps {
   totalPages: number;
   totalElements: number;
   pageSize: number;
+  currentUser?: User | null;
   onPageChange: (page: number) => void;
+  onCreate?: () => void;
   onEdit: (contact: Contact) => void;
   onViewHistory: (contact: Contact) => void;
-  onMerge: (contact: Contact) => void;
+  onMerge?: (contact: Contact) => void;
   onDeactivate: (contact: Contact) => void;
 }
 
@@ -67,12 +70,18 @@ export const ContactTable = ({
   totalPages,
   totalElements,
   pageSize,
+  currentUser,
   onPageChange,
+  onCreate,
   onEdit,
   onViewHistory,
   onMerge,
   onDeactivate,
 }: ContactTableProps) => {
+  const rep = currentUser?.role === "SALES_REP";
+  const manager = currentUser?.role === "SALES_MANAGER";
+  const admin = currentUser?.role === "ADMIN";
+
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -86,10 +95,23 @@ export const ContactTable = ({
   }
 
   if (!contacts.length) {
+    let emptyMsg = "No contacts found. Try adjusting filters or create a new contact.";
+    if (manager) emptyMsg = "No contacts for your team yet. Create one or ask an admin to assign contacts to your team.";
+    if (rep) emptyMsg = "You don't have any contacts assigned. Ask your manager to assign contacts to you.";
+
     return (
       <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
         <Users2 className="mx-auto h-10 w-10 text-slate-300" />
-        <p className="mt-3 text-sm font-medium text-slate-600">No contacts found</p>
+        <p className="mt-3 text-sm font-medium text-slate-600">{emptyMsg}</p>
+        {onCreate && (
+          <button
+            type="button"
+            onClick={onCreate}
+            className="mt-4 inline-flex h-9 items-center justify-center rounded-md bg-[#8B6FD0] px-4 text-sm font-semibold text-white transition hover:bg-[#7D62C4]"
+          >
+            New Contact
+          </button>
+        )}
       </div>
     );
   }
@@ -175,6 +197,7 @@ export const ContactTable = ({
                 <td className="px-4 py-3 text-right">
                   <ContactActions
                     contact={contact}
+                    currentUser={currentUser}
                     flipUp={index >= contacts.length - 2}
                     onEdit={onEdit}
                     onViewHistory={onViewHistory}
@@ -231,6 +254,7 @@ export const ContactTable = ({
               </div>
               <ContactActions
                 contact={contact}
+                currentUser={currentUser}
                 onEdit={onEdit}
                 onViewHistory={onViewHistory}
                 onMerge={onMerge}

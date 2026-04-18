@@ -1,14 +1,19 @@
 import { Grid3X3, List, Search } from "lucide-react";
+import type { User } from "@/types/user";
 
 interface ContactFiltersProps {
   search: string;
   type: "" | "PERSON" | "COMPANY";
   country: string;
   countries: string[];
+  assignedTo: string;
+  users: User[];
+  showAssignedTo: boolean;
   viewMode: "list" | "grid";
   onSearchChange: (value: string) => void;
   onTypeChange: (value: "" | "PERSON" | "COMPANY") => void;
   onCountryChange: (value: string) => void;
+  onAssignedToChange: (value: string) => void;
   onViewModeChange: (value: "list" | "grid") => void;
 }
 
@@ -17,10 +22,14 @@ export const ContactFilters = ({
   type,
   country,
   countries,
+  assignedTo,
+  users,
+  showAssignedTo,
   viewMode,
   onSearchChange,
   onTypeChange,
   onCountryChange,
+  onAssignedToChange,
   onViewModeChange,
 }: ContactFiltersProps) => {
   return (
@@ -60,6 +69,21 @@ export const ContactFilters = ({
               </option>
             ))}
           </select>
+
+          {showAssignedTo && (
+            <select
+              value={assignedTo}
+              onChange={(event) => onAssignedToChange(event.target.value)}
+              className="h-10 min-w-[150px] max-w-[200px] rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
+            >
+              <option value="">All Users</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.firstName} {user.lastName}
+                </option>
+              ))}
+            </select>
+          )}
 
           <div className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white p-1">
             <button

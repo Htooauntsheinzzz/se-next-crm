@@ -3,6 +3,7 @@
 import { ContactFormModal } from "@/components/contacts/ContactFormModal";
 import type { Contact, ContactUpdateRequest, TagDto } from "@/types/contact";
 import type { User } from "@/types/user";
+import type { SalesTeam } from "@/types/team";
 
 interface EditContactModalProps {
   open: boolean;
@@ -11,6 +12,7 @@ interface EditContactModalProps {
   users: User[];
   tags: TagDto[];
   companies: Contact[];
+  teams: SalesTeam[];
   onClose: () => void;
   onSubmit: (payload: ContactUpdateRequest) => Promise<void>;
 }
@@ -22,6 +24,7 @@ export const EditContactModal = ({
   users,
   tags,
   companies,
+  teams,
   onClose,
   onSubmit,
 }: EditContactModalProps) => {
@@ -33,6 +36,7 @@ export const EditContactModal = ({
       users={users}
       tags={tags}
       companies={companies}
+      teams={teams}
       initialContact={contact}
       onClose={onClose}
       onSubmit={(payload) => onSubmit(payload as ContactUpdateRequest)}

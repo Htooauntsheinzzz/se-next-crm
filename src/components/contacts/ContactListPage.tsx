@@ -15,9 +15,13 @@ import { DeactivateContactModal } from "@/components/contacts/DeactivateContactM
 import { useContacts } from "@/hooks/useContacts";
 import { contactService } from "@/services/contactService";
 import { userService } from "@/services/userService";
+import { teamService } from "@/services/teamService";
 import { getApiMessage } from "@/lib/utils";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isAdmin, isManager, isRep, canMergeContacts } from "@/lib/auth/rbac";
 import type { Contact, ContactCreateRequest, ContactUpdateRequest, TagDto } from "@/types/contact";
 import type { User } from "@/types/user";
+import type { SalesTeam } from "@/types/team";
 
 const PAGE_SIZE = 20;
 
@@ -28,6 +32,7 @@ export const ContactListPage = () => {
   const [activeTab, setActiveTab] = useState<ContactTab>("ALL");
   const [search, setSearch] = useState("");
   const [country, setCountry] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -43,8 +48,13 @@ export const ContactListPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<TagDto[]>([]);
   const [companies, setCompanies] = useState<Contact[]>([]);
+  const [teams, setTeams] = useState<SalesTeam[]>([]);
 
   const typeFilter = activeTab === "ALL" ? undefined : activeTab;
+  const { currentUser } = useCurrentUser();
+  const admin = isAdmin(currentUser);
+  const manager = isManager(currentUser);
+  const rep = isRep(currentUser);
 
   const { contacts, counts, currentPage, totalElements, totalPages, loading, error, refetch } = useContacts({
     page,
@@ -64,8 +74,10 @@ export const ContactListPage = () => {
       }
     };
 
-    void loadUsers();
-  }, []);
+    if (currentUser !== undefined) {
+      void loadUsers();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const loadTags = async () => {
@@ -79,6 +91,19 @@ export const ContactListPage = () => {
     };
 
     void loadTags();
+  }, []);
+
+  useEffect(() => {
+    const loadTeams = async () => {
+      try {
+        const response = await teamService.getAll();
+        setTeams(response ?? []);
+      } catch {
+        setTeams([]);
+      }
+    };
+
+    void loadTeams();
   }, []);
 
   useEffect(() => {
@@ -180,13 +205,36 @@ export const ContactListPage = () => {
     }
   };
 
+  let title = "All Contacts";
+  let subtitle = "Showing all contacts.";
+  let badgeLabel = "";
+  let badgeClass = "";
+
+  if (admin) {
+    badgeLabel = "Admin view";
+    badgeClass = "bg-violet-50 text-violet-700 border-violet-200";
+  } else if (manager) {
+    badgeLabel = currentUser?.teamName || "Team";
+    badgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+  } else if (rep) {
+    badgeLabel = "Assigned to me";
+    badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+  }
+
   return (
     <>
       <div className="space-y-5">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-[34px] font-semibold leading-tight text-slate-900">Contacts</h1>
-            <p className="text-sm text-slate-500">Manage your contacts and companies in one place</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-[34px] font-semibold leading-tight text-slate-900">{title}</h1>
+              {badgeLabel && (
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${badgeClass}`}>
+                  {badgeLabel}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-slate-500">{subtitle}</p>
           </div>
 
           <button
@@ -213,6 +261,9 @@ export const ContactListPage = () => {
           type={typeFilter ?? ""}
           country={country}
           countries={countries}
+          assignedTo={assignedTo}
+          users={users}
+          showAssignedTo={true}
           viewMode={viewMode}
           onSearchChange={(value) => {
             setSearch(value);
@@ -224,6 +275,10 @@ export const ContactListPage = () => {
           }}
           onCountryChange={(value) => {
             setCountry(value);
+            setPage(0);
+          }}
+          onAssignedToChange={(value) => {
+            setAssignedTo(value);
             setPage(0);
           }}
           onViewModeChange={setViewMode}
@@ -248,28 +303,32 @@ export const ContactListPage = () => {
           <ContactGrid
             contacts={contacts}
             loading={loading}
+            currentUser={currentUser}
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={totalElements}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
+            onCreate={() => setShowCreateModal(true)}
             onEdit={openEdit}
             onViewHistory={(contact) => setHistoryContactId(contact.id)}
-            onMerge={(contact) => setMergeContact(contact)}
+            onMerge={canMergeContacts(currentUser!) ? (contact) => setMergeContact(contact) : undefined}
             onDeactivate={(contact) => setDeactivateContact(contact)}
           />
         ) : (
           <ContactTable
             contacts={contacts}
             loading={loading}
+            currentUser={currentUser}
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={totalElements}
             pageSize={PAGE_SIZE}
             onPageChange={setPage}
+            onCreate={() => setShowCreateModal(true)}
             onEdit={openEdit}
             onViewHistory={(contact) => setHistoryContactId(contact.id)}
-            onMerge={(contact) => setMergeContact(contact)}
+            onMerge={canMergeContacts(currentUser!) ? (contact) => setMergeContact(contact) : undefined}
             onDeactivate={(contact) => setDeactivateContact(contact)}
           />
         )}
@@ -281,6 +340,7 @@ export const ContactListPage = () => {
         users={users}
         tags={tags}
         companies={companies}
+        teams={teams}
         onClose={() => setShowCreateModal(false)}
         onSubmit={onSubmitCreate}
       />
@@ -292,6 +352,7 @@ export const ContactListPage = () => {
         users={users}
         tags={tags}
         companies={companies}
+        teams={teams}
         onClose={() => setEditContact(null)}
         onSubmit={onSubmitEdit}
       />
