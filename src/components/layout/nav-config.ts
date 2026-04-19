@@ -7,7 +7,6 @@ import {
   Contact,
   LayoutDashboard,
   Layers,
-  Settings,
   Target,
   Users,
 } from "lucide-react";
@@ -74,11 +73,5 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/reports",
     icon: BarChart3,
     roles: ["ADMIN", "SALES_MANAGER"],
-  },
-  {
-    label: "Settings",
-    href: "#",
-    icon: Settings,
-    roles: ["ADMIN", "SALES_MANAGER", "SALES_REP"],
   },
 ];
