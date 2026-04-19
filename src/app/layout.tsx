@@ -5,8 +5,11 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Sales Surge CRM",
+  title: "Sales Surge",
   description: "Sales Surge CRM frontend authentication",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

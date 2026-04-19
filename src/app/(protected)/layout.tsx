@@ -5,37 +5,16 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  BarChart3,
   Bell,
-  Briefcase,
-  Building2,
-  Calendar,
   ChevronDown,
-  Contact,
-  LayoutDashboard,
-  Layers,
   LogOut,
   Search,
-  Settings,
-  Target,
   UserCircle,
-  UserRound,
-  Users,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { NAV_ITEMS } from "@/components/layout/nav-config";
 import { useAuth } from "@/context/AuthContext";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Leads", href: "/leads", icon: Target },
-  { label: "Opportunities", href: "/opportunities", icon: Layers },
-  { label: "Contacts", href: "/contacts", icon: Contact },
-  { label: "Activities", href: "/activities", icon: Calendar },
-  { label: "Pipeline", href: "/pipeline", icon: Briefcase },
-  { label: "Users", href: "/users", icon: Users },
-  { label: "Teams", href: "/teams", icon: Building2 },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-] as const;
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const getInitials = (firstName?: string, lastName?: string) => {
   const first = firstName?.charAt(0) ?? "";
@@ -103,10 +82,18 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, loading, logout } = useAuth();
+  const { currentUser, loading: currentUserLoading } = useCurrentUser();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   const headerTitle = useMemo(() => getHeaderTitle(pathname), [pathname]);
+  const visibleNavItems = useMemo(() => {
+    if (!currentUser?.role) {
+      return [];
+    }
+
+    return NAV_ITEMS.filter((item) => item.roles.includes(currentUser.role));
+  }, [currentUser?.role]);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -155,25 +142,42 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="space-y-1 px-3 py-4">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname.startsWith(item.href);
+          {currentUserLoading
+            ? Array.from({ length: NAV_ITEMS.length }).map((_, index) => (
+                <div key={index} className="h-9 animate-pulse rounded-lg bg-white/15" />
+              ))
+            : visibleNavItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = item.href !== "#" && pathname.startsWith(item.href);
 
-            return (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-[#6A4E97] text-white"
-                    : "text-white/85 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
+                if (item.href === "#") {
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/85 transition hover:bg-white/10 hover:text-white"
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </button>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-[#6A4E97] text-white"
+                        : "text-white/85 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
         </nav>
       </aside>
 
