@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   DollarSign,
@@ -14,13 +14,19 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TeamMemberList } from "@/components/teams/TeamMemberList";
-import { AddMemberModal } from "@/components/teams/AddMemberModal";
-import { SetLeaderModal } from "@/components/teams/SetLeaderModal";
+import dynamic from "next/dynamic";
+const AddMemberModal = dynamic(() => import("@/components/teams/AddMemberModal").then(m => ({ default: m.AddMemberModal })), { ssr: false });
+const SetLeaderModal = dynamic(() => import("@/components/teams/SetLeaderModal").then(m => ({ default: m.SetLeaderModal })), { ssr: false });
 import { TeamForm } from "@/components/teams/TeamForm";
+import { ForbiddenState } from "@/components/teams/ForbiddenState";
+import { ActivityTabs } from "@/components/activities/ActivityTabs";
+import { ActivityList } from "@/components/activities/ActivityList";
 import { useTeam } from "@/hooks/useTeam";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { activityService } from "@/services/activityService";
 import { teamService } from "@/services/teamService";
 import { userService } from "@/services/userService";
+import type { Activity } from "@/types/activity";
 import type { User } from "@/types/user";
 import { formatCurrency, getApiMessage, getInitials } from "@/lib/utils";
 
@@ -31,7 +37,7 @@ interface TeamDetailPageProps {
 type ActiveTab = "members" | "performance" | "activity";
 
 export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
-  const { team, members, loading, error, refetch } = useTeam(teamId);
+  const { team, members, loading, error, isForbidden, refetch } = useTeam(teamId);
   const { currentUser } = useCurrentUser();
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("members");
@@ -41,6 +47,10 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
   const [selectedMember, setSelectedMember] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [activityTab, setActivityTab] = useState<"todo" | "done">("todo");
+  const [teamActivities, setTeamActivities] = useState<Activity[]>([]);
+  const [teamActivityLoading, setTeamActivityLoading] = useState(false);
+  const [teamActivityError, setTeamActivityError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
   const [savingTeam, setSavingTeam] = useState(false);
 
@@ -71,6 +81,47 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
 
   const pipelineValue = Math.round((team?.targetRevenue ?? 0) * 0.65);
   const wonDeals = members.length * 2;
+  const teamMemberIdSet = useMemo(
+    () =>
+      new Set(
+        members
+          .map((member) => Number(member.id))
+          .filter((value) => Number.isFinite(value)),
+      ),
+    [members],
+  );
+
+  const fetchTeamActivities = useCallback(async (done: boolean) => {
+    try {
+      setTeamActivityLoading(true);
+      setTeamActivityError(null);
+      const response = await activityService.getAll({ done, page: 0, size: 500 });
+      const filtered = (response.content ?? []).filter((activity) => {
+        const assignedToId = Number(activity.assignedTo);
+        return Number.isFinite(assignedToId) && teamMemberIdSet.has(assignedToId);
+      });
+      setTeamActivities(filtered);
+    } catch (err) {
+      setTeamActivityError(getApiMessage(err, "Failed to load team activities"));
+    } finally {
+      setTeamActivityLoading(false);
+    }
+  }, [teamMemberIdSet]);
+
+  useEffect(() => {
+    if (activeTab !== "activity") {
+      return;
+    }
+
+    if (teamMemberIdSet.size === 0) {
+      setTeamActivities([]);
+      setTeamActivityLoading(false);
+      setTeamActivityError(null);
+      return;
+    }
+
+    void fetchTeamActivities(activityTab === "done");
+  }, [activeTab, activityTab, teamMemberIdSet, fetchTeamActivities]);
 
   const onSaveTeam = async (values: {
     name?: string;
@@ -176,6 +227,24 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
     }
   };
 
+  const onMarkDoneActivity = async (activity: Activity) => {
+    try {
+      await activityService.markDone(activity.id);
+      await fetchTeamActivities(activityTab === "done");
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to mark activity done"));
+    }
+  };
+
+  const onUndoDoneActivity = async (activity: Activity) => {
+    try {
+      await activityService.undoDone(activity.id);
+      await fetchTeamActivities(activityTab === "done");
+    } catch (err) {
+      toast.error(getApiMessage(err, "Failed to undo activity"));
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -184,6 +253,10 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
         <div className="h-72 animate-pulse rounded-xl bg-slate-100" />
       </div>
     );
+  }
+
+  if (isForbidden) {
+    return <ForbiddenState />;
   }
 
   if (!team) {
@@ -352,6 +425,25 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
                 setSelectedMember(member);
                 setShowLeaderModal(true);
               }}
+            />
+          </div>
+        ) : activeTab === "activity" ? (
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+            <ActivityTabs
+              activeTab={activityTab}
+              onChange={(tab) => {
+                setActivityTab(tab);
+              }}
+            />
+            <p className="text-sm text-slate-500">
+              Showing {teamActivities.length} {activityTab === "done" ? "completed" : "to do"} activities
+            </p>
+            <ActivityList
+              activities={teamActivities}
+              loading={teamActivityLoading}
+              error={teamActivityError}
+              onMarkDone={onMarkDoneActivity}
+              onUndo={onUndoDoneActivity}
             />
           </div>
         ) : (

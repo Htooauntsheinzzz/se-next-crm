@@ -3,6 +3,15 @@ import type { ApiResponse } from "@/types/common";
 import type { SalesTeam, TeamCreateRequest, TeamUpdateRequest } from "@/types/team";
 import type { User } from "@/types/user";
 
+import { isAxiosError } from "axios";
+
+export class ForbiddenError extends Error {
+  constructor(public resource: string) {
+    super(`Forbidden: ${resource}`);
+    this.name = "ForbiddenError";
+  }
+}
+
 export const teamService = {
   getAll: async (): Promise<SalesTeam[]> => {
     const response = await api.get<ApiResponse<SalesTeam[]>>("/crm/v1/teams");
@@ -10,8 +19,15 @@ export const teamService = {
   },
 
   getById: async (id: string): Promise<SalesTeam> => {
-    const response = await api.get<ApiResponse<SalesTeam>>(`/crm/v1/teams/${id}`);
-    return response.data.data;
+    try {
+      const response = await api.get<ApiResponse<SalesTeam>>(`/crm/v1/teams/${id}`);
+      return response.data.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
+        throw new ForbiddenError(`team ${id}`);
+      }
+      throw error;
+    }
   },
 
   create: async (data: TeamCreateRequest): Promise<SalesTeam> => {
@@ -30,8 +46,15 @@ export const teamService = {
   },
 
   getMembers: async (id: string): Promise<User[]> => {
-    const response = await api.get<ApiResponse<User[]>>(`/crm/v1/teams/${id}/members`);
-    return response.data.data;
+    try {
+      const response = await api.get<ApiResponse<User[]>>(`/crm/v1/teams/${id}/members`);
+      return response.data.data;
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
+        throw new ForbiddenError(`team ${id} members`);
+      }
+      throw error;
+    }
   },
 
   assignMember: async (teamId: string, userId: string) => {

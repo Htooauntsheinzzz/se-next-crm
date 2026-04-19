@@ -8,10 +8,12 @@ import type {
 } from "@/types/user";
 
 export const userService = {
-  getAll: async (page = 0, size = 10): Promise<PageResponse<User>> => {
-    const response = await api.get<ApiResponse<PageResponse<User>>>(
-      `/crm/v1/users?page=${page}&size=${size}`,
-    );
+  getAll: async (page = 0, size = 10, teamId?: string): Promise<PageResponse<User>> => {
+    let url = `/crm/v1/users?page=${page}&size=${size}`;
+    if (teamId) {
+      url += `&teamId=${teamId}`;
+    }
+    const response = await api.get<ApiResponse<PageResponse<User>>>(url);
     return response.data.data;
   },
 

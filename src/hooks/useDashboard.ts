@@ -21,19 +21,24 @@ const initialDashboardState: DashboardDataState = {
   conversionFunnel: [],
 };
 
-const endpointDescriptors = [
+/** Widgets accessible by ADMIN and SALES_MANAGER only */
+const managerEndpoints = [
   { key: "summary", load: dashboardService.getSummary },
   { key: "pipelineFunnel", load: dashboardService.getPipelineFunnel },
   { key: "monthlyRevenue", load: dashboardService.getMonthlyRevenue },
   { key: "topSalespersons", load: dashboardService.getTopSalespersons },
   { key: "leadsBySource", load: dashboardService.getLeadsBySource },
   { key: "teamPerformance", load: dashboardService.getTeamPerformance },
-  { key: "activitySummary", load: dashboardService.getActivitySummary },
   { key: "recentFeed", load: dashboardService.getRecentFeed },
   { key: "conversionFunnel", load: dashboardService.getConversionFunnel },
 ] as const;
 
-export const useDashboard = () => {
+/** Widgets accessible by all roles (including SALES_REP) */
+const allRoleEndpoints = [
+  { key: "activitySummary", load: dashboardService.getActivitySummary },
+] as const;
+
+export const useDashboard = (role?: string) => {
   const [data, setData] = useState<DashboardDataState>(initialDashboardState);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,6 +46,8 @@ export const useDashboard = () => {
   const [widgetErrors, setWidgetErrors] = useState<DashboardWidgetErrors>({});
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const hasBootstrapped = useRef(false);
+
+  const isManagerOrAdmin = role === "ADMIN" || role === "SALES_MANAGER";
 
   const fetchDashboard = useCallback(async () => {
     const showInitialLoader = !hasBootstrapped.current;
@@ -50,6 +57,12 @@ export const useDashboard = () => {
     } else {
       setRefreshing(true);
     }
+
+    // Build the list of endpoints based on role
+    const endpointDescriptors = [
+      ...allRoleEndpoints,
+      ...(isManagerOrAdmin ? managerEndpoints : []),
+    ];
 
     const results = await Promise.allSettled(
       endpointDescriptors.map((descriptor) => descriptor.load()),
@@ -88,7 +101,7 @@ export const useDashboard = () => {
     hasBootstrapped.current = true;
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [isManagerOrAdmin]);
 
   useEffect(() => {
     void fetchDashboard();
@@ -109,6 +122,7 @@ export const useDashboard = () => {
     error,
     widgetErrors,
     lastUpdated,
+    isManagerOrAdmin,
     refetch: fetchDashboard,
   };
 };
