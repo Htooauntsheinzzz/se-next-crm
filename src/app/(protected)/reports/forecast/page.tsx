@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { reportService } from "@/services/reportService";
+import dynamic from "next/dynamic";
 import { ReportHeader } from "@/components/reports/shared/ReportHeader";
 import { ChartCard } from "@/components/reports/shared/ChartCard";
 import { ForecastKpiCards } from "@/components/reports/forecast/ForecastKpiCards";
-import { ForecastTrendChart } from "@/components/reports/forecast/ForecastTrendChart";
-import { ForecastConfidenceChart } from "@/components/reports/forecast/ForecastConfidenceChart";
 import { ForecastBreakdownTable } from "@/components/reports/forecast/ForecastBreakdownTable";
+const ForecastTrendChart = dynamic(() => import("@/components/reports/forecast/ForecastTrendChart").then(m => ({ default: m.ForecastTrendChart })), { ssr: false });
+const ForecastConfidenceChart = dynamic(() => import("@/components/reports/forecast/ForecastConfidenceChart").then(m => ({ default: m.ForecastConfidenceChart })), { ssr: false });
 import { downloadCsv } from "@/lib/reportFormat";
 import { getApiMessage } from "@/lib/utils";
 import type { Forecast } from "@/types/report";

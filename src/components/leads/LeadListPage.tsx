@@ -12,17 +12,18 @@ import { userService } from "@/services/userService";
 import { teamService } from "@/services/teamService";
 import { contactService } from "@/services/contactService";
 import { getApiMessage } from "@/lib/utils";
+import dynamic from "next/dynamic";
 import { LeadStatusTabs, type LeadTabKey } from "@/components/leads/LeadStatusTabs";
 import { LeadFilters } from "@/components/leads/LeadFilters";
 import { LeadTable } from "@/components/leads/LeadTable";
-import { LeadStatsModal } from "@/components/leads/LeadStatsModal";
-import { CreateLeadModal } from "@/components/leads/CreateLeadModal";
-import { EditLeadModal } from "@/components/leads/EditLeadModal";
-import { AssignLeadModal } from "@/components/leads/AssignLeadModal";
-import { ConvertLeadModal } from "@/components/leads/ConvertLeadModal";
-import { MergeLeadModal } from "@/components/leads/MergeLeadModal";
-import { DeleteLeadModal } from "@/components/leads/DeleteLeadModal";
-import { LeadScoreModal } from "@/components/leads/LeadScoreModal";
+const LeadStatsModal = dynamic(() => import("@/components/leads/LeadStatsModal").then(m => ({ default: m.LeadStatsModal })), { ssr: false });
+const CreateLeadModal = dynamic(() => import("@/components/leads/CreateLeadModal").then(m => ({ default: m.CreateLeadModal })), { ssr: false });
+const EditLeadModal = dynamic(() => import("@/components/leads/EditLeadModal").then(m => ({ default: m.EditLeadModal })), { ssr: false });
+const AssignLeadModal = dynamic(() => import("@/components/leads/AssignLeadModal").then(m => ({ default: m.AssignLeadModal })), { ssr: false });
+const ConvertLeadModal = dynamic(() => import("@/components/leads/ConvertLeadModal").then(m => ({ default: m.ConvertLeadModal })), { ssr: false });
+const MergeLeadModal = dynamic(() => import("@/components/leads/MergeLeadModal").then(m => ({ default: m.MergeLeadModal })), { ssr: false });
+const DeleteLeadModal = dynamic(() => import("@/components/leads/DeleteLeadModal").then(m => ({ default: m.DeleteLeadModal })), { ssr: false });
+const LeadScoreModal = dynamic(() => import("@/components/leads/LeadScoreModal").then(m => ({ default: m.LeadScoreModal })), { ssr: false });
 import type {
   Lead,
   LeadCreateRequest,

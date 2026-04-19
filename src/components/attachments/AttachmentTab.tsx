@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Paperclip, Upload } from "lucide-react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { AttachmentList } from "@/components/attachments/AttachmentList";
-import { AttachmentUploadModal } from "@/components/attachments/AttachmentUploadModal";
+const AttachmentUploadModal = dynamic(() => import("@/components/attachments/AttachmentUploadModal").then(m => ({ default: m.AttachmentUploadModal })), { ssr: false });
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { attachmentService } from "@/services/attachmentService";
 import { getApiMessage } from "@/lib/utils";

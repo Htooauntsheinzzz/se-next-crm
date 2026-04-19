@@ -3,13 +3,14 @@
 import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { UserFilters } from "@/components/users/UserFilters";
 import { UserTable } from "@/components/users/UserTable";
 import { UserDetailDrawer } from "@/components/users/UserDetailDrawer";
-import { UserEditActionModal } from "@/components/users/UserEditActionModal";
-import { UserRoleActionModal } from "@/components/users/UserRoleActionModal";
-import { UserAssignTeamModal } from "@/components/users/UserAssignTeamModal";
-import { UserStatusActionModal } from "@/components/users/UserStatusActionModal";
+const UserEditActionModal = dynamic(() => import("@/components/users/UserEditActionModal").then(m => ({ default: m.UserEditActionModal })), { ssr: false });
+const UserRoleActionModal = dynamic(() => import("@/components/users/UserRoleActionModal").then(m => ({ default: m.UserRoleActionModal })), { ssr: false });
+const UserAssignTeamModal = dynamic(() => import("@/components/users/UserAssignTeamModal").then(m => ({ default: m.UserAssignTeamModal })), { ssr: false });
+const UserStatusActionModal = dynamic(() => import("@/components/users/UserStatusActionModal").then(m => ({ default: m.UserStatusActionModal })), { ssr: false });
 import { useUsers } from "@/hooks/useUsers";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { useCurrentUser } from "@/hooks/useCurrentUser";

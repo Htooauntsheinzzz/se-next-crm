@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { reportService } from "@/services/reportService";
+import dynamic from "next/dynamic";
 import { ReportHeader } from "@/components/reports/shared/ReportHeader";
 import { ChartCard } from "@/components/reports/shared/ChartCard";
 import { PipelineKpiCards } from "@/components/reports/pipeline/PipelineKpiCards";
 import { StageAnalysisCards } from "@/components/reports/pipeline/StageAnalysisCards";
-import { ConversionFunnelChart as PipelineConversionFunnelChart } from "@/components/reports/pipeline/ConversionFunnelChart";
-import { SalesVelocityChart } from "@/components/reports/pipeline/SalesVelocityChart";
-import { PipelineCoverageChart } from "@/components/reports/pipeline/PipelineCoverageChart";
+const PipelineConversionFunnelChart = dynamic(() => import("@/components/reports/pipeline/ConversionFunnelChart").then(m => ({ default: m.ConversionFunnelChart })), { ssr: false });
+const SalesVelocityChart = dynamic(() => import("@/components/reports/pipeline/SalesVelocityChart").then(m => ({ default: m.SalesVelocityChart })), { ssr: false });
+const PipelineCoverageChart = dynamic(() => import("@/components/reports/pipeline/PipelineCoverageChart").then(m => ({ default: m.PipelineCoverageChart })), { ssr: false });
 import { downloadCsv } from "@/lib/reportFormat";
 import { getApiMessage } from "@/lib/utils";
 import type { PipelineFullReport } from "@/types/report";

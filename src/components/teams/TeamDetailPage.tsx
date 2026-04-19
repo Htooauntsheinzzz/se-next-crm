@@ -14,8 +14,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TeamMemberList } from "@/components/teams/TeamMemberList";
-import { AddMemberModal } from "@/components/teams/AddMemberModal";
-import { SetLeaderModal } from "@/components/teams/SetLeaderModal";
+import dynamic from "next/dynamic";
+const AddMemberModal = dynamic(() => import("@/components/teams/AddMemberModal").then(m => ({ default: m.AddMemberModal })), { ssr: false });
+const SetLeaderModal = dynamic(() => import("@/components/teams/SetLeaderModal").then(m => ({ default: m.SetLeaderModal })), { ssr: false });
 import { TeamForm } from "@/components/teams/TeamForm";
 import { ForbiddenState } from "@/components/teams/ForbiddenState";
 import { ActivityTabs } from "@/components/activities/ActivityTabs";

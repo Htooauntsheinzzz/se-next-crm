@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { reportService } from "@/services/reportService";
+import dynamic from "next/dynamic";
 import { ReportHeader } from "@/components/reports/shared/ReportHeader";
 import { ChartCard } from "@/components/reports/shared/ChartCard";
 import { TeamKpiCards } from "@/components/reports/team/TeamKpiCards";
-import { TeamRevenueChart } from "@/components/reports/team/TeamRevenueChart";
-import { TeamWinRateChart } from "@/components/reports/team/TeamWinRateChart";
 import { TeamComparisonTable } from "@/components/reports/team/TeamComparisonTable";
 import { TopSalespersonsList } from "@/components/reports/team/TopSalespersonsList";
+const TeamRevenueChart = dynamic(() => import("@/components/reports/team/TeamRevenueChart").then(m => ({ default: m.TeamRevenueChart })), { ssr: false });
+const TeamWinRateChart = dynamic(() => import("@/components/reports/team/TeamWinRateChart").then(m => ({ default: m.TeamWinRateChart })), { ssr: false });
 import { downloadCsv } from "@/lib/reportFormat";
 import { getApiMessage } from "@/lib/utils";
 import type { TeamPerformance, TopSalesperson } from "@/types/report";

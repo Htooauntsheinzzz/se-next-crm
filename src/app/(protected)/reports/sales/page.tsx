@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { reportService } from "@/services/reportService";
+import dynamic from "next/dynamic";
 import { ReportHeader } from "@/components/reports/shared/ReportHeader";
 import { ChartCard } from "@/components/reports/shared/ChartCard";
 import { SalesKpiCards } from "@/components/reports/sales/SalesKpiCards";
-import { RevenueTrendChart } from "@/components/reports/sales/RevenueTrendChart";
-import { DealsByStageChart } from "@/components/reports/sales/DealsByStageChart";
-import { DealSizeDistributionChart } from "@/components/reports/sales/DealSizeDistributionChart";
 import { TopOpportunitiesList } from "@/components/reports/sales/TopOpportunitiesList";
+const RevenueTrendChart = dynamic(() => import("@/components/reports/sales/RevenueTrendChart").then(m => ({ default: m.RevenueTrendChart })), { ssr: false });
+const DealsByStageChart = dynamic(() => import("@/components/reports/sales/DealsByStageChart").then(m => ({ default: m.DealsByStageChart })), { ssr: false });
+const DealSizeDistributionChart = dynamic(() => import("@/components/reports/sales/DealSizeDistributionChart").then(m => ({ default: m.DealSizeDistributionChart })), { ssr: false });
 import { downloadCsv } from "@/lib/reportFormat";
 import { getApiMessage } from "@/lib/utils";
 import type { SalesReport } from "@/types/report";

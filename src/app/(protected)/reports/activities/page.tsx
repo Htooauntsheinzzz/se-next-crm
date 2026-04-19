@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { reportService } from "@/services/reportService";
+import dynamic from "next/dynamic";
 import { ReportHeader } from "@/components/reports/shared/ReportHeader";
 import { ChartCard } from "@/components/reports/shared/ChartCard";
 import { ActivityKpiCards } from "@/components/reports/activities/ActivityKpiCards";
-import { ActivityByTypeChart } from "@/components/reports/activities/ActivityByTypeChart";
-import { ActivityTrendChart } from "@/components/reports/activities/ActivityTrendChart";
 import { ActivityByUserTable } from "@/components/reports/activities/ActivityByUserTable";
+const ActivityByTypeChart = dynamic(() => import("@/components/reports/activities/ActivityByTypeChart").then(m => ({ default: m.ActivityByTypeChart })), { ssr: false });
+const ActivityTrendChart = dynamic(() => import("@/components/reports/activities/ActivityTrendChart").then(m => ({ default: m.ActivityTrendChart })), { ssr: false });
 import { downloadCsv } from "@/lib/reportFormat";
 import { getApiMessage } from "@/lib/utils";
 import type { ActivityReport } from "@/types/report";

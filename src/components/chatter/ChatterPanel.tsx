@@ -2,9 +2,10 @@
 
 import { MessageSquare, Mail } from "lucide-react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { AddNoteForm } from "@/components/chatter/AddNoteForm";
 import { ChatterTimeline } from "@/components/chatter/ChatterTimeline";
-import { LogEmailModal } from "@/components/chatter/LogEmailModal";
+const LogEmailModal = dynamic(() => import("@/components/chatter/LogEmailModal").then(m => ({ default: m.LogEmailModal })), { ssr: false });
 import { useChatter } from "@/hooks/useChatter";
 import { chatterService } from "@/services/chatterService";
 import { getApiMessage } from "@/lib/utils";

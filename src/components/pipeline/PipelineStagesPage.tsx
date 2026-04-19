@@ -8,9 +8,10 @@ import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { pipelineService } from "@/services/pipelineService";
 import { PipelinePreview } from "@/components/pipeline/PipelinePreview";
 import { PipelineStageList } from "@/components/pipeline/PipelineStageList";
-import { AddStageModal } from "@/components/pipeline/AddStageModal";
-import { EditStageModal } from "@/components/pipeline/EditStageModal";
-import { DeleteStageModal } from "@/components/pipeline/DeleteStageModal";
+import dynamic from "next/dynamic";
+const AddStageModal = dynamic(() => import("@/components/pipeline/AddStageModal").then(m => ({ default: m.AddStageModal })), { ssr: false });
+const EditStageModal = dynamic(() => import("@/components/pipeline/EditStageModal").then(m => ({ default: m.EditStageModal })), { ssr: false });
+const DeleteStageModal = dynamic(() => import("@/components/pipeline/DeleteStageModal").then(m => ({ default: m.DeleteStageModal })), { ssr: false });
 import { getApiMessage } from "@/lib/utils";
 import type { PipelineStageDto } from "@/types/pipeline";
 
