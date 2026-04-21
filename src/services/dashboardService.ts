@@ -55,7 +55,14 @@ const normalizeSummary = (raw: unknown): DashboardSummary => {
   return {
     totalLeads: toNumber(item.totalLeads),
     totalOpportunities: toNumber(item.totalOpportunities),
+    totalContacts: toNumber(item.totalContacts),
+    wonOpportunities: toNumber(item.wonOpportunities),
+    lostOpportunities: toNumber(item.lostOpportunities),
+    openOpportunities: toNumber(item.openOpportunities),
     totalRevenue: toNumber(item.totalRevenue),
+    pipelineValue: toNumber(item.pipelineValue),
+    weightedPipelineValue: toNumber(item.weightedPipelineValue),
+    winRate: toNumber(item.winRate),
     conversionRate: toNumber(item.conversionRate ?? item.winRate),
     openActivities: toNumber(item.openActivities ?? item.totalPending),
     overdueActivities: toNumber(item.overdueActivities),
@@ -226,9 +233,9 @@ const normalizeConversionFunnel = (raw: unknown): ConversionFunnelItem[] => {
 };
 
 export const dashboardService = {
-  getSummary: () =>
+  getSummary: (teamId?: number) =>
     api
-      .get<ApiResponse<unknown>>("/crm/v1/dashboard/summary")
+      .get<ApiResponse<unknown>>("/crm/v1/dashboard/summary", { params: { teamId } })
       .then((response) => normalizeSummary(unwrapData(response.data))),
 
   getPipelineFunnel: () =>

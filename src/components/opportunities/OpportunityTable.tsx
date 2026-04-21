@@ -115,84 +115,149 @@ export const OpportunityTable = ({
   const end = Math.min((currentPage + 1) * pageSize, totalElements);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-600">
-          <tr>
-            <th className="px-4 py-3">Opportunity</th>
-            <th className="px-4 py-3">Stage</th>
-            <th className="px-4 py-3">Revenue</th>
-            <th className="px-4 py-3">Probability</th>
-            <th className="px-4 py-3">Weighted</th>
-            <th className="px-4 py-3">Priority</th>
-            <th className="px-4 py-3">Salesperson</th>
-            <th className="px-4 py-3">Team</th>
-            <th className="px-4 py-3">State</th>
-            <th className="px-4 py-3">Deadline</th>
-            <th className="px-4 py-3 text-right">Actions</th>
-          </tr>
-        </thead>
+    <div className="rounded-xl border border-slate-200 bg-white">
+      <div className="divide-y divide-slate-100 md:hidden">
+        {opportunities.map((opportunity) => {
+          const stage = stages.find((item) => item.id === opportunity.stageId);
 
-        <tbody className="divide-y divide-slate-100 text-slate-700">
-          {opportunities.map((opportunity) => {
-            const stage = stages.find((item) => item.id === opportunity.stageId);
-
-            return (
-              <tr key={opportunity.id} className="hover:bg-slate-50/80">
-                <td className="px-4 py-3">
-                  <p className="font-semibold text-slate-900">{opportunity.name}</p>
+          return (
+            <article key={opportunity.id} className="space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-slate-900">{opportunity.name}</p>
                   <p className="text-xs text-slate-500">{opportunity.salespersonName ?? "—"}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <StageBadge stageName={opportunity.stageName} stage={stage} />
-                </td>
-                <td className="px-4 py-3 font-medium text-slate-800">
-                  {formatCurrency(toSafeNumber(opportunity.expectedRevenue))}
-                </td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex rounded-md border border-[#CEDCF8] bg-[#EFF4FF] px-2 py-0.5 text-xs font-medium text-[#2F6EDB]">
-                    {toSafeNumber(opportunity.probability)}%
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-slate-700">
-                  {formatCurrency(toSafeNumber(opportunity.weightedRevenue))}
-                </td>
-                <td className="px-4 py-3">
-                  <PriorityStars value={toSafeNumber(opportunity.priority)} />
-                </td>
-                <td className="px-4 py-3">
-                  {opportunity.salespersonName ? (
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-700">
-                        {getInitials(opportunity.salespersonName)}
-                      </span>
-                      <span className="text-xs text-slate-700">{opportunity.salespersonName}</span>
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-xs text-slate-700">{opportunity.teamName ?? "—"}</td>
-                <td className="px-4 py-3">{stateNode(opportunity.kanbanState)}</td>
-                <td className="px-4 py-3 text-slate-600">{formatDate(opportunity.deadline)}</td>
-                <td className="px-4 py-3 text-right">
-                  <OpportunityActions
-                    opportunity={opportunity}
-                    canDelete={canDelete}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onMarkWon={onMarkWon}
-                    onMarkLost={onMarkLost}
-                    onDelete={onDelete}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                </div>
+                <OpportunityActions
+                  opportunity={opportunity}
+                  canDelete={canDelete}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onMarkWon={onMarkWon}
+                  onMarkLost={onMarkLost}
+                  onDelete={onDelete}
+                />
+              </div>
 
-      <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
+              <div className="flex items-center justify-between gap-3">
+                <StageBadge stageName={opportunity.stageName} stage={stage} />
+                <span className="inline-flex rounded-md border border-[#CEDCF8] bg-[#EFF4FF] px-2 py-0.5 text-xs font-medium text-[#2F6EDB]">
+                  {toSafeNumber(opportunity.probability)}%
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Revenue</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {formatCurrency(toSafeNumber(opportunity.expectedRevenue))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Weighted</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {formatCurrency(toSafeNumber(opportunity.weightedRevenue))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Priority</p>
+                  <div className="mt-1">
+                    <PriorityStars value={toSafeNumber(opportunity.priority)} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-slate-500">Deadline</p>
+                  <p className="mt-1 text-sm font-medium text-slate-800">{formatDate(opportunity.deadline)}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-slate-700">{opportunity.teamName ?? "—"}</span>
+                {stateNode(opportunity.kanbanState)}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-600">
+            <tr>
+              <th className="px-4 py-3">Opportunity</th>
+              <th className="px-4 py-3">Stage</th>
+              <th className="px-4 py-3">Revenue</th>
+              <th className="px-4 py-3">Probability</th>
+              <th className="px-4 py-3">Weighted</th>
+              <th className="px-4 py-3">Priority</th>
+              <th className="px-4 py-3">Salesperson</th>
+              <th className="px-4 py-3">Team</th>
+              <th className="px-4 py-3">State</th>
+              <th className="px-4 py-3">Deadline</th>
+              <th className="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-slate-100 text-slate-700">
+            {opportunities.map((opportunity) => {
+              const stage = stages.find((item) => item.id === opportunity.stageId);
+
+              return (
+                <tr key={opportunity.id} className="hover:bg-slate-50/80">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-slate-900">{opportunity.name}</p>
+                    <p className="text-xs text-slate-500">{opportunity.salespersonName ?? "—"}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StageBadge stageName={opportunity.stageName} stage={stage} />
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-800">
+                    {formatCurrency(toSafeNumber(opportunity.expectedRevenue))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex rounded-md border border-[#CEDCF8] bg-[#EFF4FF] px-2 py-0.5 text-xs font-medium text-[#2F6EDB]">
+                      {toSafeNumber(opportunity.probability)}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {formatCurrency(toSafeNumber(opportunity.weightedRevenue))}
+                  </td>
+                  <td className="px-4 py-3">
+                    <PriorityStars value={toSafeNumber(opportunity.priority)} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {opportunity.salespersonName ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-700">
+                          {getInitials(opportunity.salespersonName)}
+                        </span>
+                        <span className="text-xs text-slate-700">{opportunity.salespersonName}</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-700">{opportunity.teamName ?? "—"}</td>
+                  <td className="px-4 py-3">{stateNode(opportunity.kanbanState)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDate(opportunity.deadline)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <OpportunityActions
+                      opportunity={opportunity}
+                      canDelete={canDelete}
+                      onView={onView}
+                      onEdit={onEdit}
+                      onMarkWon={onMarkWon}
+                      onMarkLost={onMarkLost}
+                      onDelete={onDelete}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
         <p>
           Showing {start}-{end} of {totalElements} opportunities
         </p>

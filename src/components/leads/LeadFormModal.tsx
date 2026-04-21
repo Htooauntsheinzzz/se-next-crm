@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,9 @@ import type { Contact } from "@/types/contact";
 import { mediumOptions, sourceOptions } from "@/components/leads/leadConfig";
 import { contactService } from "@/services/contactService";
 import { getApiMessage } from "@/lib/utils";
+import { CountryPhoneInput } from "@/components/shared/CountryPhoneInput";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
 
 const leadSchema = z.object({
   contactName: z.string().min(1, "Contact name is required").max(150),
@@ -70,6 +73,12 @@ export const LeadFormModal = ({
   onClose,
   onSubmit,
 }: LeadFormModalProps) => {
+  const { currentUser } = useCurrentUser();
+  const admin = isAdmin(currentUser);
+  const manager = isManager(currentUser);
+  const rep = isRep(currentUser);
+  const currentTeamId = currentUser?.teamId ?? null;
+
   const [contactResults, setContactResults] = useState<Contact[]>([]);
   const [contactSearchLoading, setContactSearchLoading] = useState(false);
   const [contactSearchError, setContactSearchError] = useState<string | null>(null);
@@ -105,6 +114,39 @@ export const LeadFormModal = ({
   const selectedTags = watch("tagIds") ?? [];
   const assignedTo = watch("assignedTo");
   const contactNameValue = watch("contactName") ?? "";
+  const phone = watch("phone") ?? "";
+  const assignableUsers = useMemo(() => {
+    const activeUsers = users.filter((user) => user.active);
+
+    if (admin) {
+      return activeUsers;
+    }
+
+    if (manager) {
+      return activeUsers.filter((user) => user.teamId && currentTeamId && user.teamId === currentTeamId);
+    }
+
+    if (rep && currentUser) {
+      return activeUsers.filter((user) => user.id === currentUser.id);
+    }
+
+    return activeUsers;
+  }, [admin, currentTeamId, currentUser, manager, rep, users]);
+  const assignableUserIdSet = useMemo(
+    () => new Set(assignableUsers.map((user) => user.id)),
+    [assignableUsers],
+  );
+  const visibleTeams = useMemo(() => {
+    if (admin) {
+      return teams;
+    }
+
+    if ((manager || rep) && currentTeamId) {
+      return teams.filter((team) => String(team.id) === currentTeamId);
+    }
+
+    return teams;
+  }, [admin, currentTeamId, manager, rep, teams]);
 
   useEffect(() => {
     if (!open) {
@@ -123,8 +165,8 @@ export const LeadFormModal = ({
         campaign: "",
         description: "",
         contactId: "",
-        assignedTo: "",
-        teamId: "",
+        assignedTo: rep && currentUser ? String(currentUser.id) : "",
+        teamId: (rep || manager) && currentTeamId ? currentTeamId : "",
         tagIds: [],
       });
       setSelectedContact(null);
@@ -186,7 +228,7 @@ export const LeadFormModal = ({
     setContactSearchLoading(false);
     setContactSearchError(null);
     setContactInputFocused(false);
-  }, [initialLead, mode, open, reset]);
+  }, [currentTeamId, currentUser, initialLead, manager, mode, open, rep, reset]);
 
   useEffect(() => {
     if (!open) {
@@ -245,13 +287,13 @@ export const LeadFormModal = ({
       return;
     }
 
-    const selectedUser = users.find((user) => String(user.id) === assignedTo);
+    const selectedUser = assignableUsers.find((user) => String(user.id) === assignedTo);
     if (!selectedUser?.teamId) {
       return;
     }
 
     setValue("teamId", String(selectedUser.teamId));
-  }, [assignedTo, setValue, users]);
+  }, [assignableUsers, assignedTo, setValue]);
 
   useEffect(() => {
     const normalized = normalizeText(contactNameValue);
@@ -355,8 +397,16 @@ export const LeadFormModal = ({
       campaign: cleanOptional(values.campaign),
       description: cleanOptional(values.description),
       contactId: resolvedContactId,
-      assignedTo: toNumberOrUndefined(values.assignedTo),
-      teamId: toNumberOrUndefined(values.teamId),
+      assignedTo:
+        rep && currentUser
+          ? Number(currentUser.id)
+          : values.assignedTo && assignableUserIdSet.has(values.assignedTo)
+            ? toNumberOrUndefined(values.assignedTo)
+            : undefined,
+      teamId:
+        (rep || manager) && currentTeamId
+          ? toNumberOrUndefined(currentTeamId)
+          : toNumberOrUndefined(values.teamId),
       tagIds: values.tagIds?.length ? values.tagIds : undefined,
     };
 
@@ -487,13 +537,12 @@ export const LeadFormModal = ({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-700">Phone</label>
-                <input
-                  {...register("phone")}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
-                  placeholder="+1 (555) 123-4567"
+                <CountryPhoneInput
+                  label="Phone"
+                  value={phone}
+                  onChange={(value) => setValue("phone", value, { shouldDirty: true, shouldValidate: true })}
+                  error={errors.phone?.message}
                 />
-                {renderError(errors.phone?.message)}
               </div>
 
               <div className="sm:col-span-2">
@@ -557,31 +606,46 @@ export const LeadFormModal = ({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-sm font-medium text-slate-700">Assign To</label>
-                <select
-                  {...register("assignedTo")}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
-                >
-                  <option value="">Select user</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName}
-                    </option>
-                  ))}
-                </select>
+                {rep ? (
+                  <div className="mt-1 flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[10px] font-semibold text-slate-700">
+                      {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+                    </span>
+                    <span>Assigned to: You</span>
+                  </div>
+                ) : (
+                  <select
+                    {...register("assignedTo")}
+                    className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                  >
+                    <option value="">Select user</option>
+                    {assignableUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.firstName} {user.lastName}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Team</label>
-                <select
-                  {...register("teamId")}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
-                >
-                  <option value="">Select team</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
+                {rep || manager ? (
+                  <div className="mt-1 flex h-10 items-center rounded-md border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700">
+                    {currentUser?.teamName || "Your Team"}
+                  </div>
+                ) : (
+                  <select
+                    {...register("teamId")}
+                    className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
+                  >
+                    <option value="">Select team</option>
+                    {visibleTeams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           </section>

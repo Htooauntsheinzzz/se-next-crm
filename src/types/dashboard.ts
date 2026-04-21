@@ -1,7 +1,14 @@
 export interface DashboardSummary {
   totalLeads: number;
   totalOpportunities: number;
+  totalContacts?: number;
+  wonOpportunities?: number;
+  lostOpportunities?: number;
+  openOpportunities?: number;
   totalRevenue: number;
+  pipelineValue?: number;
+  weightedPipelineValue?: number;
+  winRate?: number;
   conversionRate: number;
   openActivities: number;
   overdueActivities: number;

@@ -18,7 +18,10 @@ export const TopLeadSourcesList = ({ data }: TopLeadSourcesListProps) => {
   return (
     <div>
       {data.map((item, index) => (
-        <div key={`${item.source}-${index}`} className="flex items-center justify-between gap-3 border-b border-slate-100 py-4 last:border-0">
+        <div
+          key={`${item.source}-${index}`}
+          className="flex flex-col gap-3 border-b border-slate-100 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"
+        >
           <div className="flex min-w-0 items-center gap-3">
             <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white ${getCircleClassName(index + 1)}`}>
               {index + 1}
@@ -29,7 +32,7 @@ export const TopLeadSourcesList = ({ data }: TopLeadSourcesListProps) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 text-right text-xs">
+          <div className="grid grid-cols-3 gap-2 text-xs sm:gap-4 sm:text-right">
             <div>
               <p className="text-slate-500">Qualified</p>
               <p className="font-semibold text-slate-900">{item.qualifiedCount}</p>

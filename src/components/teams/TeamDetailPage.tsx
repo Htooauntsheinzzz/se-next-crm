@@ -24,6 +24,8 @@ import { ActivityList } from "@/components/activities/ActivityList";
 import { useTeam } from "@/hooks/useTeam";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { activityService } from "@/services/activityService";
+import { dashboardService } from "@/services/dashboardService";
+import { opportunityService } from "@/services/opportunityService";
 import { teamService } from "@/services/teamService";
 import { userService } from "@/services/userService";
 import type { Activity } from "@/types/activity";
@@ -53,6 +55,8 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
   const [teamActivityError, setTeamActivityError] = useState<string | null>(null);
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
   const [savingTeam, setSavingTeam] = useState(false);
+  const [teamMetrics, setTeamMetrics] = useState({ pipelineValue: 0, wonDeals: 0 });
+  const [teamMetricsLoading, setTeamMetricsLoading] = useState(false);
 
   const isAdmin = currentUser?.role === "ADMIN";
   const isManager = currentUser?.role === "SALES_MANAGER";
@@ -79,8 +83,6 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
     [members, team?.leaderId],
   );
 
-  const pipelineValue = Math.round((team?.targetRevenue ?? 0) * 0.65);
-  const wonDeals = members.length * 2;
   const teamMemberIdSet = useMemo(
     () =>
       new Set(
@@ -90,6 +92,86 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
       ),
     [members],
   );
+
+  const aggregateTeamMetricsFromOpportunities = useCallback(async (teamIdNumber: number) => {
+    const size = 200;
+    let page = 0;
+    let totalPages = 1;
+    let pipelineValue = 0;
+    let wonDeals = 0;
+
+    while (page < totalPages) {
+      const response = await opportunityService.getAll({
+        teamId: teamIdNumber,
+        page,
+        size,
+      });
+      const opportunities = response.content ?? [];
+
+      opportunities.forEach((opportunity) => {
+        if (opportunity.active) {
+          pipelineValue += Number(opportunity.expectedRevenue) || 0;
+        }
+
+        if (opportunity.wonAt || opportunity.stageName?.toLowerCase() === "won") {
+          wonDeals += 1;
+        }
+      });
+
+      const parsedTotalPages = Number(response.totalPages);
+      totalPages = Number.isFinite(parsedTotalPages) && parsedTotalPages > 0 ? parsedTotalPages : 1;
+      page += 1;
+
+      if (opportunities.length === 0) {
+        break;
+      }
+    }
+
+    return { pipelineValue, wonDeals };
+  }, []);
+
+  const fetchTeamMetrics = useCallback(async () => {
+    if (!team?.id) {
+      setTeamMetrics({ pipelineValue: 0, wonDeals: 0 });
+      return;
+    }
+
+    const teamIdNumber = Number(team.id);
+    if (!Number.isFinite(teamIdNumber)) {
+      setTeamMetrics({ pipelineValue: 0, wonDeals: 0 });
+      return;
+    }
+
+    setTeamMetricsLoading(true);
+
+    try {
+      if (isAdmin || isManager) {
+        const summary = await dashboardService.getSummary(teamIdNumber);
+        setTeamMetrics({
+          pipelineValue: Number(summary.pipelineValue) || 0,
+          wonDeals: Number(summary.wonOpportunities) || 0,
+        });
+        return;
+      }
+
+      const metrics = await aggregateTeamMetricsFromOpportunities(teamIdNumber);
+      setTeamMetrics(metrics);
+    } catch {
+      try {
+        const metrics = await aggregateTeamMetricsFromOpportunities(teamIdNumber);
+        setTeamMetrics(metrics);
+      } catch (error) {
+        setTeamMetrics({ pipelineValue: 0, wonDeals: 0 });
+        toast.error(getApiMessage(error, "Failed to load team performance metrics"));
+      }
+    } finally {
+      setTeamMetricsLoading(false);
+    }
+  }, [aggregateTeamMetricsFromOpportunities, isAdmin, isManager, team?.id]);
+
+  useEffect(() => {
+    void fetchTeamMetrics();
+  }, [fetchTeamMetrics]);
 
   const fetchTeamActivities = useCallback(async (done: boolean) => {
     try {
@@ -358,7 +440,7 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
             <div>
               <p className="text-sm text-slate-500">Pipeline Value</p>
               <p className="text-4xl font-semibold leading-tight text-slate-900">
-                {formatCurrency(pipelineValue)}
+                {teamMetricsLoading ? "..." : formatCurrency(teamMetrics.pipelineValue)}
               </p>
             </div>
           </div>
@@ -370,7 +452,9 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
             </span>
             <div>
               <p className="text-sm text-slate-500">Won Deals</p>
-              <p className="text-4xl font-semibold leading-tight text-slate-900">{wonDeals}</p>
+              <p className="text-4xl font-semibold leading-tight text-slate-900">
+                {teamMetricsLoading ? "..." : teamMetrics.wonDeals}
+              </p>
             </div>
           </div>
         </article>
