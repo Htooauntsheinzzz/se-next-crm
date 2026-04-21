@@ -29,7 +29,12 @@ export const AssignLeadModal = ({
       return;
     }
 
-    setSelectedUserId(lead?.assignedTo ? String(lead.assignedTo) : "");
+    const initialAssignedId =
+      lead?.assignedTo && users.some((user) => Number(user.id) === Number(lead.assignedTo))
+        ? String(lead.assignedTo)
+        : "";
+
+    setSelectedUserId(initialAssignedId);
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -41,12 +46,13 @@ export const AssignLeadModal = ({
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [lead?.assignedTo, onClose, open]);
+  }, [lead?.assignedTo, onClose, open, users]);
 
   const selectedUser = useMemo(
     () => users.find((user) => String(user.id) === selectedUserId) ?? null,
     [selectedUserId, users],
   );
+  const canSubmit = Boolean(selectedUser) && !loading;
 
   if (!open || !lead) {
     return null;
@@ -88,6 +94,7 @@ export const AssignLeadModal = ({
             <select
               value={selectedUserId}
               onChange={(event) => setSelectedUserId(event.target.value)}
+              disabled={users.length === 0}
               className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
             >
               <option value="">Select a user</option>
@@ -97,6 +104,9 @@ export const AssignLeadModal = ({
                 </option>
               ))}
             </select>
+            {users.length === 0 ? (
+              <p className="mt-1 text-xs text-amber-600">No assignable users for your role/team.</p>
+            ) : null}
           </div>
 
           <div>
@@ -130,7 +140,7 @@ export const AssignLeadModal = ({
           </button>
           <button
             type="button"
-            disabled={!selectedUserId || loading}
+            disabled={!canSubmit}
             onClick={() => void onSubmit(Number(selectedUserId))}
             className="inline-flex h-9 items-center gap-1 rounded-md bg-[#8B6FD0] px-3 text-sm font-semibold text-white transition hover:bg-[#7D62C4] disabled:cursor-not-allowed disabled:opacity-60"
           >

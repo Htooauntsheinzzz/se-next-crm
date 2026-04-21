@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useLeads } from "@/hooks/useLeads";
 import { useLeadStats } from "@/hooks/useLeadStats";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { leadService } from "@/services/leadService";
 import { leadScoringService } from "@/services/leadScoringService";
 import { userService } from "@/services/userService";
@@ -40,7 +41,8 @@ const PAGE_SIZE = 20;
 const getActiveUsers = (users: User[]) => users.filter((user) => user.active);
 
 export const LeadListPage = () => {
-  const { isAdmin } = useRoleGuard();
+  const { isAdmin, isManager, isRep } = useRoleGuard();
+  const { currentUser } = useCurrentUser();
 
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState<LeadStatus | undefined>(undefined);
@@ -115,6 +117,22 @@ export const LeadListPage = () => {
     void loadInitialData();
   }, []);
 
+  const assignableUsersForAssignModal = useMemo(() => {
+    if (isAdmin) {
+      return users;
+    }
+
+    if (isManager) {
+      const teamId = currentUser?.teamId ?? null;
+      if (!teamId) {
+        return [];
+      }
+      return users.filter((user) => user.teamId === teamId);
+    }
+
+    return [];
+  }, [currentUser?.teamId, isAdmin, isManager, users]);
+
   const refreshAll = async () => {
     await Promise.all([refetchLeads(), refetchStats()]);
   };
@@ -167,10 +185,15 @@ export const LeadListPage = () => {
       return;
     }
 
+    if (isRep) {
+      toast.error("You don't have permission to assign leads");
+      return;
+    }
+
     try {
       setSavingAssign(true);
       await leadService.assign(assignLead.id, { userId });
-      const assignedUser = users.find((user) => Number(user.id) === userId);
+      const assignedUser = assignableUsersForAssignModal.find((user) => Number(user.id) === userId);
       toast.success(
         assignedUser
           ? `Lead assigned to ${assignedUser.firstName} ${assignedUser.lastName}`
@@ -342,9 +365,16 @@ export const LeadListPage = () => {
           totalElements={totalElements}
           pageSize={PAGE_SIZE}
           canDelete={isAdmin}
+          canAssign={!isRep}
           onPageChange={setPage}
           onEdit={setEditingLead}
-          onAssign={setAssignLead}
+          onAssign={(lead) => {
+            if (isRep) {
+              toast.error("You don't have permission to assign leads");
+              return;
+            }
+            setAssignLead(lead);
+          }}
           onConvert={setConvertLead}
           onViewScore={(lead) => {
             void openScoreModal(lead);
@@ -380,7 +410,7 @@ export const LeadListPage = () => {
       <AssignLeadModal
         open={Boolean(assignLead)}
         lead={assignLead}
-        users={users}
+        users={assignableUsersForAssignModal}
         loading={savingAssign}
         onClose={() => setAssignLead(null)}
         onSubmit={handleAssign}
