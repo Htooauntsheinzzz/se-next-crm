@@ -12,6 +12,7 @@ import type { Contact } from "@/types/contact";
 import { mediumOptions, sourceOptions } from "@/components/leads/leadConfig";
 import { contactService } from "@/services/contactService";
 import { getApiMessage } from "@/lib/utils";
+import { CountryPhoneInput } from "@/components/shared/CountryPhoneInput";
 
 const leadSchema = z.object({
   contactName: z.string().min(1, "Contact name is required").max(150),
@@ -105,6 +106,7 @@ export const LeadFormModal = ({
   const selectedTags = watch("tagIds") ?? [];
   const assignedTo = watch("assignedTo");
   const contactNameValue = watch("contactName") ?? "";
+  const phone = watch("phone") ?? "";
 
   useEffect(() => {
     if (!open) {
@@ -487,13 +489,12 @@ export const LeadFormModal = ({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-700">Phone</label>
-                <input
-                  {...register("phone")}
-                  className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
-                  placeholder="+1 (555) 123-4567"
+                <CountryPhoneInput
+                  label="Phone"
+                  value={phone}
+                  onChange={(value) => setValue("phone", value, { shouldDirty: true, shouldValidate: true })}
+                  error={errors.phone?.message}
                 />
-                {renderError(errors.phone?.message)}
               </div>
 
               <div className="sm:col-span-2">

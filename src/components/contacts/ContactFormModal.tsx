@@ -16,6 +16,7 @@ import type { User } from "@/types/user";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
 import type { SalesTeam } from "@/types/team";
+import { CountryPhoneInput } from "@/components/shared/CountryPhoneInput";
 
 const industries = [
   "Technology",
@@ -141,6 +142,8 @@ export const ContactFormModal = ({
   const type = watch("type");
   const parentId = watch("parentId");
   const selectedTags = watch("tagIds") ?? [];
+  const phone = watch("phone") ?? "";
+  const mobile = watch("mobile") ?? "";
 
   useEffect(() => {
     reset(initialValues);
@@ -384,26 +387,20 @@ export const ContactFormModal = ({
               </div>
 
               <div className={`grid grid-cols-1 gap-3 ${type === "PERSON" ? "sm:grid-cols-2" : ""}`}>
-                <div>
-                  <label className="text-sm font-medium text-slate-700">Phone</label>
-                  <input
-                    {...register("phone")}
-                    className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
-                    placeholder="+1 (555) 123-4567"
-                  />
-                  {renderInputError(errors.phone?.message)}
-                </div>
+                <CountryPhoneInput
+                  label="Phone"
+                  value={phone}
+                  onChange={(value) => setValue("phone", value, { shouldDirty: true, shouldValidate: true })}
+                  error={errors.phone?.message}
+                />
 
                 {type === "PERSON" ? (
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">Mobile</label>
-                    <input
-                      {...register("mobile")}
-                      className="mt-1 h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] focus:ring-2"
-                      placeholder="+1 (555) 123-4567"
-                    />
-                    {renderInputError(errors.mobile?.message)}
-                  </div>
+                  <CountryPhoneInput
+                    label="Mobile"
+                    value={mobile}
+                    onChange={(value) => setValue("mobile", value, { shouldDirty: true, shouldValidate: true })}
+                    error={errors.mobile?.message}
+                  />
                 ) : null}
               </div>
 
