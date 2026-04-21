@@ -17,6 +17,8 @@ import type { PipelineStageDto } from "@/types/pipeline";
 import type { SalesTeam } from "@/types/team";
 import type { User } from "@/types/user";
 import type { Contact, TagDto } from "@/types/contact";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(255),
@@ -72,6 +74,12 @@ export const OpportunityFormModal = ({
   onClose,
   onSubmit,
 }: OpportunityFormModalProps) => {
+  const { currentUser } = useCurrentUser();
+  const admin = isAdmin(currentUser);
+  const manager = isManager(currentUser);
+  const rep = isRep(currentUser);
+  const currentTeamId = currentUser?.teamId ?? null;
+
   const [contactQuery, setContactQuery] = useState("");
   const [contactResults, setContactResults] = useState<Contact[]>([]);
   const [contactLoading, setContactLoading] = useState(false);
@@ -81,6 +89,38 @@ export const OpportunityFormModal = ({
     () => stages.filter((stage) => !stage.isWon && !stage.isLost),
     [stages],
   );
+  const assignableUsers = useMemo(() => {
+    const activeUsers = users.filter((user) => user.active);
+
+    if (admin) {
+      return activeUsers;
+    }
+
+    if (manager) {
+      return activeUsers.filter((user) => user.teamId && currentTeamId && user.teamId === currentTeamId);
+    }
+
+    if (rep && currentUser) {
+      return activeUsers.filter((user) => user.id === currentUser.id);
+    }
+
+    return activeUsers;
+  }, [admin, currentTeamId, currentUser, manager, rep, users]);
+  const assignableUserIdSet = useMemo(
+    () => new Set(assignableUsers.map((user) => user.id)),
+    [assignableUsers],
+  );
+  const visibleTeams = useMemo(() => {
+    if (admin) {
+      return teams;
+    }
+
+    if ((manager || rep) && currentTeamId) {
+      return teams.filter((team) => String(team.id) === currentTeamId);
+    }
+
+    return teams;
+  }, [admin, currentTeamId, manager, rep, teams]);
 
   const defaultStage = useMemo(() => {
     if (forcedStageId) {
@@ -107,10 +147,18 @@ export const OpportunityFormModal = ({
       probability: initialOpportunity?.probability ?? 10,
       priority: initialOpportunity?.priority ?? 1,
       stageId: defaultStage,
-      salespersonId: initialOpportunity?.salespersonId
-        ? String(initialOpportunity.salespersonId)
-        : "",
-      teamId: initialOpportunity?.teamId ? String(initialOpportunity.teamId) : "",
+      salespersonId:
+        rep && currentUser
+          ? String(currentUser.id)
+          : initialOpportunity?.salespersonId
+            ? String(initialOpportunity.salespersonId)
+            : "",
+      teamId:
+        (rep || manager) && currentTeamId
+          ? currentTeamId
+          : initialOpportunity?.teamId
+            ? String(initialOpportunity.teamId)
+            : "",
       contactId: initialOpportunity?.contactId ? String(initialOpportunity.contactId) : "",
       deadline: initialOpportunity?.deadline ?? "",
       notes: initialOpportunity?.notes ?? "",
@@ -123,6 +171,7 @@ export const OpportunityFormModal = ({
   const priority = watch("priority") ?? 1;
   const selectedTags = watch("tagIds") ?? [];
   const stageIdValue = watch("stageId");
+  const salespersonIdValue = watch("salespersonId");
 
   useEffect(() => {
     if (!open) {
@@ -135,10 +184,18 @@ export const OpportunityFormModal = ({
       probability: initialOpportunity?.probability ?? 10,
       priority: initialOpportunity?.priority ?? 1,
       stageId: defaultStage,
-      salespersonId: initialOpportunity?.salespersonId
-        ? String(initialOpportunity.salespersonId)
-        : "",
-      teamId: initialOpportunity?.teamId ? String(initialOpportunity.teamId) : "",
+      salespersonId:
+        rep && currentUser
+          ? String(currentUser.id)
+          : initialOpportunity?.salespersonId
+            ? String(initialOpportunity.salespersonId)
+            : "",
+      teamId:
+        (rep || manager) && currentTeamId
+          ? currentTeamId
+          : initialOpportunity?.teamId
+            ? String(initialOpportunity.teamId)
+            : "",
       contactId: initialOpportunity?.contactId ? String(initialOpportunity.contactId) : "",
       deadline: initialOpportunity?.deadline ?? "",
       notes: initialOpportunity?.notes ?? "",
@@ -148,7 +205,7 @@ export const OpportunityFormModal = ({
     setContactResults([]);
     setContactError(null);
     setContactLoading(false);
-  }, [defaultStage, initialOpportunity, open, reset]);
+  }, [currentTeamId, currentUser, defaultStage, initialOpportunity, manager, open, rep, reset]);
 
   useEffect(() => {
     if (!open || availableStages.length === 0) {
@@ -164,6 +221,19 @@ export const OpportunityFormModal = ({
 
     setValue("stageId", defaultStage, { shouldDirty: true, shouldValidate: true });
   }, [availableStages, defaultStage, open, setValue, stageIdValue]);
+
+  useEffect(() => {
+    if (!salespersonIdValue) {
+      return;
+    }
+
+    const selectedUser = assignableUsers.find((user) => user.id === salespersonIdValue);
+    if (!selectedUser?.teamId) {
+      return;
+    }
+
+    setValue("teamId", String(selectedUser.teamId), { shouldDirty: true, shouldValidate: true });
+  }, [assignableUsers, salespersonIdValue, setValue]);
 
   useEffect(() => {
     if (!open) {
@@ -240,14 +310,24 @@ export const OpportunityFormModal = ({
   };
 
   const submit = async (values: FormValues) => {
+    const normalizedSalespersonId =
+      rep && currentUser
+        ? currentUser.id
+        : values.salespersonId && assignableUserIdSet.has(values.salespersonId)
+          ? values.salespersonId
+          : "";
+
     const payload: OpportunityCreateRequest | OpportunityUpdateRequest = {
       name: values.name.trim(),
       expectedRevenue: Number(values.expectedRevenue || 0),
       probability: Number(values.probability || 0),
       priority: Number(values.priority || 1),
       stageId: Number(values.stageId),
-      salespersonId: toNumberOrUndefined(values.salespersonId),
-      teamId: toNumberOrUndefined(values.teamId),
+      salespersonId: toNumberOrUndefined(normalizedSalespersonId),
+      teamId:
+        (rep || manager) && currentTeamId
+          ? toNumberOrUndefined(currentTeamId)
+          : toNumberOrUndefined(values.teamId),
       contactId: toNumberOrUndefined(values.contactId),
       deadline: values.deadline || undefined,
       notes: values.notes || undefined,
@@ -400,34 +480,47 @@ export const OpportunityFormModal = ({
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Salesperson</label>
-                <select
-                  {...register("salespersonId")}
-                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700"
-                >
-                  <option value="">Select salesperson</option>
-                  {users
-                    .filter((user) => user.active)
-                    .map((user) => (
+                {rep ? (
+                  <div className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-300 text-[10px] font-semibold text-slate-700">
+                      {currentUser?.firstName?.[0]}{currentUser?.lastName?.[0]}
+                    </span>
+                    <span>Assigned to: You</span>
+                  </div>
+                ) : (
+                  <select
+                    {...register("salespersonId")}
+                    className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700"
+                  >
+                    <option value="">Select salesperson</option>
+                    {assignableUsers.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.firstName} {user.lastName}
                       </option>
                     ))}
-                </select>
+                  </select>
+                )}
               </div>
 
               <div>
                 <label className="mb-1 block text-sm font-medium text-slate-700">Team</label>
-                <select
-                  {...register("teamId")}
-                  className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700"
-                >
-                  <option value="">Select team</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
+                {rep || manager ? (
+                  <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-700">
+                    {currentUser?.teamName || "Your Team"}
+                  </div>
+                ) : (
+                  <select
+                    {...register("teamId")}
+                    className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-700"
+                  >
+                    <option value="">Select team</option>
+                    {visibleTeams.map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>

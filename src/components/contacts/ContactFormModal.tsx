@@ -126,6 +126,7 @@ export const ContactFormModal = ({
   const admin = isAdmin(currentUser);
   const rep = isRep(currentUser);
   const manager = isManager(currentUser);
+  const currentTeamId = currentUser?.teamId ?? null;
   const initialValues = useMemo(() => mapInitialValues(initialContact, currentUser), [initialContact, currentUser]);
   const {
     register,
@@ -141,13 +142,54 @@ export const ContactFormModal = ({
 
   const type = watch("type");
   const parentId = watch("parentId");
+  const assignedTo = watch("assignedTo");
   const selectedTags = watch("tagIds") ?? [];
   const phone = watch("phone") ?? "";
   const mobile = watch("mobile") ?? "";
+  const assignableUsers = useMemo(() => {
+    const activeUsers = users.filter((user) => user.active);
+
+    if (admin) {
+      return activeUsers;
+    }
+
+    if (manager) {
+      return activeUsers.filter((user) => user.teamId && currentTeamId && user.teamId === currentTeamId);
+    }
+
+    if (rep && currentUser) {
+      return activeUsers.filter((user) => user.id === currentUser.id);
+    }
+
+    return activeUsers;
+  }, [admin, currentTeamId, currentUser, manager, rep, users]);
+  const assignableUserIdSet = useMemo(
+    () => new Set(assignableUsers.map((user) => user.id)),
+    [assignableUsers],
+  );
+  const selectedAssignedUser = useMemo(
+    () => users.find((user) => String(user.id) === assignedTo) ?? null,
+    [assignedTo, users],
+  );
 
   useEffect(() => {
     reset(initialValues);
   }, [initialValues, reset]);
+
+  useEffect(() => {
+    if (!open || !admin || manager || rep) {
+      return;
+    }
+
+    if (!assignedTo || !selectedAssignedUser?.teamId) {
+      return;
+    }
+
+    setValue("teamId", String(selectedAssignedUser.teamId), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [admin, assignedTo, manager, open, rep, selectedAssignedUser, setValue]);
 
   useEffect(() => {
     if (!open) {
@@ -209,8 +251,20 @@ export const ContactFormModal = ({
       source: cleanOptional(values.source),
       notes: cleanOptional(values.notes),
       industry: values.type === "COMPANY" ? cleanOptional(values.industry) : undefined,
-      assignedTo: rep && currentUser ? Number(currentUser.id) : (values.assignedTo ? Number(values.assignedTo) : undefined),
-      teamId: (rep || manager) && currentUser?.teamId ? Number(currentUser.teamId) : (values.teamId ? Number(values.teamId) : undefined),
+      assignedTo:
+        rep && currentUser
+          ? Number(currentUser.id)
+          : values.assignedTo && assignableUserIdSet.has(values.assignedTo)
+            ? Number(values.assignedTo)
+            : undefined,
+      teamId:
+        (rep || manager) && currentUser?.teamId
+          ? Number(currentUser.teamId)
+          : values.teamId
+            ? Number(values.teamId)
+            : selectedAssignedUser?.teamId
+              ? Number(selectedAssignedUser.teamId)
+              : undefined,
       tagIds: values.tagIds?.length ? values.tagIds : undefined,
     };
 
@@ -512,7 +566,7 @@ export const ContactFormModal = ({
                       className="mt-1 h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700"
                     >
                       <option value="">Unassigned</option>
-                      {users.map((user) => (
+                      {assignableUsers.map((user) => (
                         <option key={user.id} value={user.id}>
                           {user.firstName} {user.lastName}
                         </option>
