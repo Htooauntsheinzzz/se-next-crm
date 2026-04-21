@@ -38,7 +38,7 @@ export const ReportCard = ({ href, icon: Icon, iconBg, iconColor, title, subtitl
         <ChevronRight className="h-5 w-5 text-slate-400 transition-colors group-hover:text-[#8B6DD0]" />
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-4 border-t border-slate-100 pt-4">
+      <div className="mt-4 grid grid-cols-1 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3 sm:gap-4">
         {stats.slice(0, 3).map((item) => (
           <div key={item.label}>
             <p className="text-xs text-slate-500">{item.label}</p>
