@@ -14,6 +14,7 @@ import type { Lead } from "@/types/lead";
 interface LeadActionsProps {
   lead: Lead;
   canDelete?: boolean;
+  canAssign?: boolean;
   flipUp?: boolean;
   onEdit: (lead: Lead) => void;
   onAssign: (lead: Lead) => void;
@@ -33,6 +34,7 @@ const MENU_MIN_WIDTH = 190;
 export const LeadActions = ({
   lead,
   canDelete = false,
+  canAssign = true,
   flipUp = false,
   onEdit,
   onAssign,
@@ -159,17 +161,19 @@ export const LeadActions = ({
                 Edit
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onAssign(lead);
-                }}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <UserPlus className="h-4 w-4" />
-                Assign
-              </button>
+              {canAssign ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onAssign(lead);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Assign
+                </button>
+              ) : null}
 
               <button
                 type="button"

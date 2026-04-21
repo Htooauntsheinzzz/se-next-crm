@@ -13,6 +13,7 @@ interface LeadTableProps {
   totalElements: number;
   pageSize: number;
   canDelete: boolean;
+  canAssign: boolean;
   onPageChange: (page: number) => void;
   onEdit: (lead: Lead) => void;
   onAssign: (lead: Lead) => void;
@@ -85,6 +86,7 @@ export const LeadTable = ({
   totalElements,
   pageSize,
   canDelete,
+  canAssign,
   onPageChange,
   onEdit,
   onAssign,
@@ -197,6 +199,7 @@ export const LeadTable = ({
                   <LeadActions
                     lead={lead}
                     canDelete={canDelete}
+                    canAssign={canAssign}
                     flipUp={index >= leads.length - 2}
                     onEdit={onEdit}
                     onAssign={onAssign}
@@ -261,6 +264,7 @@ export const LeadTable = ({
               <LeadActions
                 lead={lead}
                 canDelete={canDelete}
+                canAssign={canAssign}
                 onEdit={onEdit}
                 onAssign={onAssign}
                 onConvert={onConvert}
