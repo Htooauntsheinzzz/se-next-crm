@@ -43,9 +43,9 @@ export const LeadScoreModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 px-4 py-4 sm:flex sm:items-center sm:justify-center" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-2xl"
+        className="mx-auto flex w-full max-w-md flex-col rounded-xl border border-slate-200 bg-white shadow-2xl sm:my-0 max-h-[calc(100dvh-2rem)]"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between border-b border-slate-200 px-4 py-3">
@@ -65,7 +65,7 @@ export const LeadScoreModal = ({
           </button>
         </div>
 
-        <div className="space-y-4 p-4">
+        <div className="min-h-0 space-y-4 overflow-y-auto p-4">
           {loading ? (
             <div className="space-y-2 animate-pulse">
               <div className="h-16 rounded-md bg-slate-100" />
@@ -89,14 +89,14 @@ export const LeadScoreModal = ({
                 {score.breakdown.map((item, index) => (
                   <div
                     key={`${item.ruleName}-${item.fieldName}-${index}`}
-                    className="flex items-center justify-between rounded-md border border-slate-200 px-3 py-2"
+                    className="flex flex-col gap-2 rounded-md border border-slate-200 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-slate-800">{item.ruleName}</p>
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-medium text-slate-800">{item.ruleName}</p>
                       <p className="text-xs text-slate-500">Field: {item.fieldName}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="inline-flex items-center gap-1 text-xs font-medium text-slate-600">
+                    <div className="text-left sm:text-right">
+                      <p className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 sm:justify-end">
                         {item.matched ? (
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
                         ) : (
