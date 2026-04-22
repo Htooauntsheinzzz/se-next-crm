@@ -18,8 +18,8 @@ import type {
 } from "@/types/report";
 
 export default function ReportsHubPage() {
-  const { isAdmin, isManager, loading: roleLoading } = useRoleGuard();
-  const canAccess = isAdmin || isManager;
+  const { isAdmin, isManager, isRep, loading: roleLoading } = useRoleGuard();
+  const canAccess = isAdmin || isManager || isRep;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

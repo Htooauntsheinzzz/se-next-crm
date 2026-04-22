@@ -17,7 +17,7 @@ export default function ReportsLayout({ children }: { children: ReactNode }) {
     return (
       <ForbiddenState
         title="Reports aren't available for your role"
-        subtitle="Reports are visible to admins and sales managers. If you need a specific report, ask your manager."
+        subtitle="Reports are available to admins, sales managers, and sales reps."
         ctaLabel="Back to Dashboard"
         ctaHref="/dashboard"
         icon={BarChart3}

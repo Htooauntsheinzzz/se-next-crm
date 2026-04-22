@@ -72,6 +72,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Reports",
     href: "/reports",
     icon: BarChart3,
-    roles: ["ADMIN", "SALES_MANAGER"],
+    roles: ["ADMIN", "SALES_MANAGER", "SALES_REP"],
   },
 ];

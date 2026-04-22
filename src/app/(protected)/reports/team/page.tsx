@@ -16,8 +16,8 @@ import { getApiMessage } from "@/lib/utils";
 import type { TeamPerformance, TopSalesperson } from "@/types/report";
 
 export default function TeamReportsPage() {
-  const { isAdmin, isManager, loading: roleLoading } = useRoleGuard();
-  const canAccess = isAdmin || isManager;
+  const { isAdmin, isManager, isRep, loading: roleLoading } = useRoleGuard();
+  const canAccess = isAdmin || isManager || isRep;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<TeamPerformance[]>([]);
