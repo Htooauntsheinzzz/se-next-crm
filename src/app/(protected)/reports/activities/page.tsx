@@ -75,7 +75,11 @@ export default function ActivityReportsPage() {
   if (error || !data) {
     return (
       <div className="space-y-4">
-        <ReportHeader title="Activity Reports" subtitle="Task completion and productivity analytics" />
+        <ReportHeader
+          title="Activity Reports"
+          subtitle="Task completion and productivity analytics"
+          backHref="/reports"
+        />
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error ?? "Failed to load activity report"}
         </div>
@@ -88,6 +92,7 @@ export default function ActivityReportsPage() {
       <ReportHeader
         title="Activity Reports"
         subtitle="Task completion and productivity analytics"
+        backHref="/reports"
         periodOptions={[3, 6, 12]}
         selectedPeriod={months}
         onPeriodChange={setMonths}

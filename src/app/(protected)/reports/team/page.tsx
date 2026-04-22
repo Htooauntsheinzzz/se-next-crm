@@ -78,6 +78,7 @@ export default function TeamReportsPage() {
         <ReportHeader
           title="Team Performance Reports"
           subtitle="Team-level productivity and quota analytics"
+          backHref="/reports"
         />
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error}
@@ -91,6 +92,7 @@ export default function TeamReportsPage() {
       <ReportHeader
         title="Team Performance Reports"
         subtitle="Team-level productivity and quota analytics"
+        backHref="/reports"
         onExport={() => {
           const headers = ["Team Name", "Total Opportunities", "Won Opportunities", "Total Revenue", "Win Rate (%)"];
           const rows = teams.map(t => [

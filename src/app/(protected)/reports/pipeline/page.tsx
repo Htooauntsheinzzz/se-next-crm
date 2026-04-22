@@ -74,6 +74,7 @@ export default function PipelineReportsPage() {
         <ReportHeader
           title="Pipeline Reports"
           subtitle="Stage analysis, conversion metrics, and velocity trends"
+          backHref="/reports"
         />
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error ?? "Failed to load pipeline report"}
@@ -87,6 +88,7 @@ export default function PipelineReportsPage() {
       <ReportHeader
         title="Pipeline Reports"
         subtitle="Stage analysis, conversion metrics, and velocity trends"
+        backHref="/reports"
         onExport={() => {
           const headers = ["Stage", "Count", "Total Value ($)", "Avg Days In Stage", "Conversion Rate (%)"];
           const rows = (data.stageAnalysis ?? []).map(s => [

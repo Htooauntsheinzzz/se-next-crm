@@ -71,7 +71,11 @@ export default function SalesReportsPage() {
   if (error || !data) {
     return (
       <div className="space-y-4">
-        <ReportHeader title="Sales Reports" subtitle="Revenue trends and deal performance analytics" />
+        <ReportHeader
+          title="Sales Reports"
+          subtitle="Revenue trends and deal performance analytics"
+          backHref="/reports"
+        />
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error ?? "Failed to load sales report"}
         </div>
@@ -84,6 +88,7 @@ export default function SalesReportsPage() {
       <ReportHeader
         title="Sales Reports"
         subtitle="Revenue trends and deal performance analytics"
+        backHref="/reports"
         periodOptions={[3, 6, 12]}
         selectedPeriod={months}
         onPeriodChange={setMonths}
