@@ -15,8 +15,8 @@ import { getApiMessage } from "@/lib/utils";
 import type { ActivityReport } from "@/types/report";
 
 export default function ActivityReportsPage() {
-  const { isAdmin, isManager, loading: roleLoading } = useRoleGuard();
-  const canAccess = isAdmin || isManager;
+  const { isAdmin, isManager, isRep, loading: roleLoading } = useRoleGuard();
+  const canAccess = isAdmin || isManager || isRep;
   const [months, setMonths] = useState(6);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

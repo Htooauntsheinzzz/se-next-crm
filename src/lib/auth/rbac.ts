@@ -10,7 +10,7 @@ export const canEditContact = (u: User, c: Contact) =>
   isAdmin(u) || isManager(u) || (isRep(u) && c.assignedTo === Number(u.id));
 
 export const canMergeContacts = (u: User) => !isRep(u);
-export const canViewReports = (u?: User | null) => isAdmin(u) || isManager(u);
+export const canViewReports = (u?: User | null) => isAdmin(u) || isManager(u) || isRep(u);
 
 // Team RBAC Helpers
 export const canCreateTeam = (u: User | null) => isAdmin(u);

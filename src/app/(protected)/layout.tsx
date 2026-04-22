@@ -8,11 +8,11 @@ import {
   Bell,
   ChevronDown,
   LogOut,
-  Search,
   UserCircle,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { NAV_ITEMS } from "@/components/layout/nav-config";
+import { GlobalSearchBar } from "@/components/layout/GlobalSearchBar";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
@@ -186,14 +186,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-1 items-center gap-6">
             <p className="hidden text-sm font-medium text-slate-600 md:block">{headerTitle}</p>
 
-            <div className="relative max-w-[420px] flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="h-10 w-full rounded-lg border border-slate-200 bg-[#F9FAFB] pl-10 pr-3 text-sm text-slate-700 outline-none ring-[#D9CFF5] transition focus:ring-2"
-              />
-            </div>
+            <GlobalSearchBar currentUser={currentUser} />
           </div>
 
           <div className="ml-4 flex items-center gap-2.5">

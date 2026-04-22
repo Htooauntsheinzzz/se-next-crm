@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { teamSchema } from "@/lib/validations";
@@ -20,6 +20,7 @@ interface TeamFormProps {
   mode: "create" | "edit";
   initialValues?: TeamFormValues;
   users: User[];
+  teamId?: string;
   loading?: boolean;
   onCancel?: () => void;
   onSubmit: (data: TeamCreateRequest | TeamUpdateRequest) => Promise<void>;
@@ -29,6 +30,7 @@ export const TeamForm = ({
   mode,
   initialValues,
   users,
+  teamId,
   loading = false,
   onCancel,
   onSubmit,
@@ -57,11 +59,63 @@ export const TeamForm = ({
     });
   }, [initialValues, reset]);
 
+  const isEligibleLeader = useCallback((user: User) => {
+    if (!user.active) {
+      return false;
+    }
+
+    if (user.role !== "SALES_MANAGER") {
+      return false;
+    }
+
+    if (mode === "create") {
+      return true;
+    }
+
+    if (!user.teamId) {
+      return true;
+    }
+
+    return Boolean(teamId) && user.teamId === teamId;
+  }, [mode, teamId]);
+
+  const leaderCandidates = useMemo(() => {
+    const eligible = users.filter((user) => isEligibleLeader(user));
+
+    // Keep legacy selected leader visible to avoid silently resetting edit forms.
+    if (initialValues?.leaderId && !eligible.some((user) => user.id === initialValues.leaderId)) {
+      const currentLeader = users.find((user) => user.id === initialValues.leaderId);
+      if (currentLeader) {
+        return [currentLeader, ...eligible];
+      }
+    }
+
+    return eligible;
+  }, [initialValues?.leaderId, isEligibleLeader, users]);
+
+  const leaderHelperText = useMemo(() => {
+    if (mode === "create") {
+      if (leaderCandidates.length === 0) {
+        return "No eligible sales manager is available.";
+      }
+      return "Any active sales manager can be selected. If currently in another team, they will be moved.";
+    }
+
+    if (leaderCandidates.length === 0) {
+      return "No eligible sales manager found for this team.";
+    }
+
+    return "Only active sales managers from this team (or unassigned) are available.";
+  }, [leaderCandidates.length, mode]);
+
   const submit = async (values: TeamFormValues) => {
+    const selectedLeader = users.find((user) => user.id === values.leaderId);
+    const safeLeaderId = selectedLeader && isEligibleLeader(selectedLeader) ? values.leaderId : undefined;
+
     await onSubmit({
       name: values.name,
       description: values.description?.trim() || undefined,
-      leaderId: values.leaderId || undefined,
+      leaderId: safeLeaderId,
       targetRevenue: values.targetRevenue ?? 0,
     });
   };
@@ -118,12 +172,18 @@ export const TeamForm = ({
           {...register("leaderId")}
         >
           <option value="">Select a team leader (optional)</option>
-          {users.map((user) => (
+          {leaderCandidates.length === 0 ? (
+            <option value="" disabled>
+              No eligible sales manager available
+            </option>
+          ) : null}
+          {leaderCandidates.map((user) => (
             <option key={user.id} value={user.id}>
               {user.firstName} {user.lastName} ({user.role})
             </option>
           ))}
         </select>
+        <p className="text-xs text-slate-400">{leaderHelperText}</p>
       </div>
 
       <div className="flex items-center justify-end gap-2">
