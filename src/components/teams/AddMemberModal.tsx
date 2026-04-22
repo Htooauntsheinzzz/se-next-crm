@@ -42,11 +42,11 @@ export const AddMemberModal = ({
         return false;
       }
 
-      if (currentMemberIds.has(user.id)) {
+      if (user.role !== "SALES_MANAGER" && user.role !== "SALES_REP") {
         return false;
       }
 
-      if (user.teamId && user.teamId !== teamId) {
+      if (currentMemberIds.has(user.id)) {
         return false;
       }
 
@@ -57,7 +57,7 @@ export const AddMemberModal = ({
       const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
       return fullName.includes(normalizedSearch) || user.email.toLowerCase().includes(normalizedSearch);
     });
-  }, [currentMemberIds, search, teamId, users]);
+  }, [currentMemberIds, search, users]);
 
   if (!open) {
     return null;
@@ -93,12 +93,14 @@ export const AddMemberModal = ({
             {availableUsers.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.firstName} {user.lastName} ({user.email})
+                {user.teamName && user.teamId !== teamId ? ` - currently in ${user.teamName}` : ""}
               </option>
             ))}
           </select>
 
           <p className="text-xs text-slate-400">
-            Only active users without another team are shown.
+            Only active sales managers/reps are shown. Selecting a user from another team will move them to this
+            team.
           </p>
         </div>
 

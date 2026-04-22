@@ -66,7 +66,7 @@ export const TeamMemberList = ({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {canSetLeader && !isLeader ? (
+                {canSetLeader && !isLeader && member.active && member.role === "SALES_MANAGER" ? (
                   <button
                     type="button"
                     disabled={busy}
@@ -145,7 +145,7 @@ export const TeamMemberList = ({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center gap-2">
-                      {canSetLeader && !isLeader ? (
+                      {canSetLeader && !isLeader && member.active && member.role === "SALES_MANAGER" ? (
                         <button
                           type="button"
                           disabled={busy}

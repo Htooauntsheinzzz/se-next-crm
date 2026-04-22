@@ -570,6 +570,7 @@ export const TeamDetailPage = ({ teamId }: TeamDetailPageProps) => {
                 leaderId: team.leaderId ?? "",
                 targetRevenue: team.targetRevenue ?? 0,
               }}
+              teamId={team.id}
               users={members}
               loading={savingTeam}
               onCancel={() => setShowEditModal(false)}
