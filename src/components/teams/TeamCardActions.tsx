@@ -21,6 +21,9 @@ export const TeamCardActions = ({
   onAddMember,
   onChangeLeader,
 }: TeamCardActionsProps) => {
+  const MENU_WIDTH = 180;
+  const MENU_ESTIMATED_HEIGHT = 220;
+  const VIEWPORT_PADDING = 8;
   const { currentUser } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,12 +37,35 @@ export const TeamCardActions = ({
   const changeLeaderAllowed = canEditTeam(currentUser);
 
   useEffect(() => {
-    if (!open || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setMenuPosition({
-      top: rect.bottom + window.scrollY + 4,
-      left: rect.right - 180, // roughly menu width
-    });
+    if (!open) return;
+
+    const updatePosition = () => {
+      if (!containerRef.current) {
+        return;
+      }
+
+      const rect = containerRef.current.getBoundingClientRect();
+      const menuHeight = menuRef.current?.offsetHeight ?? MENU_ESTIMATED_HEIGHT;
+      const fitsBelow = rect.bottom + 4 + menuHeight <= window.innerHeight - VIEWPORT_PADDING;
+      const top = fitsBelow
+        ? rect.bottom + 4
+        : Math.max(VIEWPORT_PADDING, rect.top - menuHeight - 4);
+
+      const idealLeft = rect.right - MENU_WIDTH;
+      const maxLeft = window.innerWidth - MENU_WIDTH - VIEWPORT_PADDING;
+      const left = Math.min(Math.max(VIEWPORT_PADDING, idealLeft), Math.max(VIEWPORT_PADDING, maxLeft));
+
+      setMenuPosition({ top, left });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
   }, [open]);
 
   useEffect(() => {
