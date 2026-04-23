@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { leadService } from "@/services/leadService";
-import type { LeadStats } from "@/types/lead";
+import type { LeadFilters, LeadStats, LeadStatus } from "@/types/lead";
 import { getApiMessage } from "@/lib/utils";
 
 interface UseLeadStatsResult {
@@ -10,6 +10,12 @@ interface UseLeadStatsResult {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+}
+
+interface UseLeadStatsParams {
+  assignedTo?: LeadFilters["assignedTo"];
+  teamId?: LeadFilters["teamId"];
+  search?: LeadFilters["search"];
 }
 
 const emptyStats: LeadStats = {
@@ -20,7 +26,9 @@ const emptyStats: LeadStats = {
   LOST: 0,
 };
 
-export const useLeadStats = (): UseLeadStatsResult => {
+const statuses: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "CONVERTED", "LOST"];
+
+export const useLeadStats = ({ assignedTo, teamId, search }: UseLeadStatsParams = {}): UseLeadStatsResult => {
   const [stats, setStats] = useState<LeadStats>(emptyStats);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,17 +37,32 @@ export const useLeadStats = (): UseLeadStatsResult => {
     try {
       setLoading(true);
       setError(null);
-      const response = await leadService.getStats();
-      setStats({
-        ...emptyStats,
-        ...response,
-      });
+      const responses = await Promise.all(
+        statuses.map((status) =>
+          leadService.getAll({
+            status,
+            assignedTo,
+            teamId,
+            search: search?.trim() || undefined,
+            page: 0,
+            size: 1,
+          }),
+        ),
+      );
+
+      const nextStats = statuses.reduce<LeadStats>((acc, status, index) => {
+        acc[status] = responses[index]?.totalElements ?? 0;
+        return acc;
+      }, { ...emptyStats });
+
+      setStats(nextStats);
     } catch (err) {
       setError(getApiMessage(err, "Failed to load lead stats"));
+      setStats(emptyStats);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [assignedTo, search, teamId]);
 
   useEffect(() => {
     void fetchStats();

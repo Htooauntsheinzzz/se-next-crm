@@ -73,6 +73,7 @@ export default function ForecastReportsPage() {
         <ReportHeader
           title="Forecast Reports"
           subtitle="Revenue outlook and forecast confidence"
+          backHref="/reports"
         />
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {error ?? "Failed to load forecast report"}
@@ -88,6 +89,7 @@ export default function ForecastReportsPage() {
       <ReportHeader
         title="Forecast Reports"
         subtitle="Revenue outlook and forecast confidence"
+        backHref="/reports"
         periodOptions={[3, 6, 12]}
         selectedPeriod={months}
         onPeriodChange={setMonths}

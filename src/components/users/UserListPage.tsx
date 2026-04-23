@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { UserFilters } from "@/components/users/UserFilters";
@@ -24,6 +24,8 @@ const PAGE_SIZE = 10;
 export const UserListPage = () => {
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<UserFiltersType>({ search: "" });
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
 
   const [drawerUserId, setDrawerUserId] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
@@ -75,6 +77,42 @@ export const UserListPage = () => {
   const onRefresh = async () => {
     await refetch();
     toast.success("Users refreshed");
+  };
+
+  const closeInviteModal = () => {
+    setShowInviteModal(false);
+    setInviteEmail("");
+  };
+
+  const onSendInviteEmail = () => {
+    const email = inviteEmail.trim().toLowerCase();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    const registerUrl = `${window.location.origin}/register`;
+    const subject = "Register your CRM account";
+    const body = encodeURIComponent(
+      `Hello,\n\nPlease register your account using this link:\n${registerUrl}\n\nBest regards,`,
+    );
+
+    const gmailUrl =
+      `https://mail.google.com/mail/?view=cm&fs=1` +
+      `&to=${encodeURIComponent(email)}` +
+      `&su=${encodeURIComponent(subject)}` +
+      `&body=${body}`;
+
+    const popup = window.open(gmailUrl, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      toast.error("Popup blocked. Please allow popups and try again.");
+      return;
+    }
+
+    toast.success("Gmail compose opened with registration link");
+    closeInviteModal();
   };
 
   const onSubmitEdit = async (values: { firstName: string; lastName: string }) => {
@@ -188,7 +226,7 @@ export const UserListPage = () => {
           <button
             type="button"
             className="inline-flex h-10 items-center gap-2 self-start rounded-lg bg-[#8B6FD0] px-4 text-sm font-semibold text-white transition hover:bg-[#7D62C4]"
-            onClick={() => toast.info("Invite flow can be added next")}
+            onClick={() => setShowInviteModal(true)}
           >
             <Plus className="h-4 w-4" />
             Invite User
@@ -326,6 +364,72 @@ export const UserListPage = () => {
         onClose={() => setStatusUser(null)}
         onConfirm={onConfirmStatus}
       />
+
+      {showInviteModal ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={closeInviteModal}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-slate-200 bg-white shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Invite User</h3>
+                <p className="mt-0.5 text-sm text-slate-500">Send a registration link by email</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeInviteModal}
+                className="rounded-md p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 px-5 py-4">
+              <label htmlFor="invite-email" className="text-sm font-medium text-slate-700">
+                Recipient Email
+              </label>
+              <input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    onSendInviteEmail();
+                  }
+                }}
+                placeholder="name@company.com"
+                className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#8B6FD0] focus:ring-2 focus:ring-[#8B6FD0]/20"
+                autoFocus
+              />
+              <p className="text-xs text-slate-500">Link included: /register</p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-5 py-4">
+              <button
+                type="button"
+                onClick={closeInviteModal}
+                className="inline-flex h-10 items-center rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onSendInviteEmail}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-[#8B6FD0] px-4 text-sm font-semibold text-white transition hover:bg-[#7D62C4]"
+              >
+                <Send className="h-4 w-4" />
+                Send Invite
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 };

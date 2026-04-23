@@ -95,7 +95,10 @@ export const LeadListPage = () => {
     loading: statsLoading,
     error: statsError,
     refetch: refetchStats,
-  } = useLeadStats();
+  } = useLeadStats({
+    assignedTo,
+    search,
+  });
 
   useEffect(() => {
     const loadInitialData = async () => {

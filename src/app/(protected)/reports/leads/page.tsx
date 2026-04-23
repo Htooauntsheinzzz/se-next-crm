@@ -77,6 +77,7 @@ export default function LeadReportsPage() {
         <ReportHeader
           title="Lead Reports"
           subtitle="Lead source analysis, conversion rates, and qualification metrics"
+          backHref="/reports"
           periodOptions={[1, 3, 6, 12]}
           selectedPeriod={months}
           onPeriodChange={setMonths}
@@ -93,6 +94,7 @@ export default function LeadReportsPage() {
       <ReportHeader
         title="Lead Reports"
         subtitle="Lead source analysis, conversion rates, and qualification metrics"
+        backHref="/reports"
         periodOptions={[1, 3, 6, 12]}
         selectedPeriod={months}
         onPeriodChange={setMonths}
