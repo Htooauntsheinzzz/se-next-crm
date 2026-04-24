@@ -138,9 +138,30 @@ export const UserDetailDrawer = ({
             </section>
 
             <section className="rounded-lg border border-slate-200 p-4 text-sm text-slate-600">
-              <p>
-                <span className="font-medium text-slate-800">Team:</span> {user.teamName ?? "-"}
-              </p>
+              <div>
+                <span className="font-medium text-slate-800">
+                  {user.teams && user.teams.length > 1 ? "Teams:" : "Team:"}
+                </span>{" "}
+                {user.teams && user.teams.length > 0 ? (
+                  <span className="inline-flex flex-wrap gap-1 align-middle">
+                    {user.teams.map((t) => (
+                      <span
+                        key={t.id}
+                        className={
+                          t.primary
+                            ? "inline-flex items-center rounded-full bg-[#EFEAFB] px-2 py-0.5 text-xs font-medium text-[#5E4BAA]"
+                            : "inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                        }
+                      >
+                        {t.name}
+                        {t.primary ? " ★" : ""}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  user.teamName ?? "-"
+                )}
+              </div>
               <p className="mt-2">
                 <span className="font-medium text-slate-800">Role:</span> {roleToLabel(user.role)}
               </p>
