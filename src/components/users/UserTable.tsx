@@ -105,7 +105,7 @@ export const UserTable = ({
 
   return (
     <>
-      <div className="relative hidden overflow-x-hidden overflow-y-visible rounded-xl border border-slate-200 bg-white md:block">
+      <div className="relative hidden overflow-visible rounded-xl border border-slate-200 bg-white md:block">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold tracking-wide text-slate-600">
             <tr>
