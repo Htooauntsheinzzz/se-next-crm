@@ -68,16 +68,12 @@ export const TeamForm = ({
       return false;
     }
 
-    if (mode === "create") {
-      return true;
-    }
-
-    if (!user.teamId) {
-      return true;
-    }
-
-    return Boolean(teamId) && user.teamId === teamId;
-  }, [mode, teamId]);
+    // Many-to-many memberships: any active sales manager can lead
+    // any team regardless of their current team memberships. Becoming
+    // a leader will add them as a member of this team (if not already)
+    // without removing them from any other team.
+    return true;
+  }, []);
 
   const leaderCandidates = useMemo(() => {
     const eligible = users.filter((user) => isEligibleLeader(user));
@@ -94,19 +90,11 @@ export const TeamForm = ({
   }, [initialValues?.leaderId, isEligibleLeader, users]);
 
   const leaderHelperText = useMemo(() => {
-    if (mode === "create") {
-      if (leaderCandidates.length === 0) {
-        return "No eligible sales manager is available.";
-      }
-      return "Any active sales manager can be selected. If currently in another team, they will be moved.";
-    }
-
     if (leaderCandidates.length === 0) {
-      return "No eligible sales manager found for this team.";
+      return "No eligible sales manager is available.";
     }
-
-    return "Only active sales managers from this team (or unassigned) are available.";
-  }, [leaderCandidates.length, mode]);
+    return "Any active sales manager can be selected. They will be added as a member of this team (their other teams are preserved).";
+  }, [leaderCandidates.length]);
 
   const submit = async (values: TeamFormValues) => {
     const selectedLeader = users.find((user) => user.id === values.leaderId);

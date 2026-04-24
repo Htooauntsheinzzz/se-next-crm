@@ -138,7 +138,27 @@ export const UserTable = ({
                   <td className="px-4 py-3">
                     <RoleBadge role={user.role} />
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{user.teamName ?? "-"}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {user.teams && user.teams.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {user.teams.map((t) => (
+                          <span
+                            key={t.id}
+                            className={
+                              t.primary
+                                ? "inline-flex items-center rounded-full bg-[#EFEAFB] px-2 py-0.5 text-xs font-medium text-[#5E4BAA]"
+                                : "inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+                            }
+                            title={t.primary ? "Primary team" : "Additional team"}
+                          >
+                            {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      user.teamName ?? "-"
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <UserStatusBadge active={user.active} />
                   </td>
