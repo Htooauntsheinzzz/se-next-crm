@@ -17,6 +17,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
 import type { SalesTeam } from "@/types/team";
 import { CountryPhoneInput } from "@/components/shared/CountryPhoneInput";
+import { roleToLabel } from "@/lib/utils";
 
 const industries = [
   "Technology",
@@ -172,9 +173,16 @@ export const ContactFormModal = ({
     [assignedTo, users],
   );
 
+  // Reset whenever the modal opens. Without the `open` gate the effect
+  // only fires when `initialValues` gets a new reference — but
+  // `mapInitialValues(null, currentUser)` is memoised, so a second
+  // open of the create modal would otherwise reuse the previous form
+  // state (the user would see the last contact's typed values).
   useEffect(() => {
-    reset(initialValues);
-  }, [initialValues, reset]);
+    if (open) {
+      reset(initialValues);
+    }
+  }, [open, initialValues, reset]);
 
   useEffect(() => {
     if (!open || !admin || manager || rep) {
@@ -269,6 +277,14 @@ export const ContactFormModal = ({
     };
 
     await onSubmit(payload);
+
+    // Clear the form after a successful create so a "Create another"
+    // workflow starts blank. In edit mode the parent typically closes
+    // the modal, but resetting is harmless either way (it snaps back
+    // to the new initialValues on the next open via the effect above).
+    if (mode === "create") {
+      reset(mapInitialValues(null, currentUser));
+    }
   };
 
   const onFormKeyDown = (event: ReactKeyboardEvent<HTMLFormElement>) => {
@@ -568,7 +584,7 @@ export const ContactFormModal = ({
                       <option value="">Unassigned</option>
                       {assignableUsers.map((user) => (
                         <option key={user.id} value={user.id}>
-                          {user.firstName} {user.lastName}
+                          {user.firstName} {user.lastName} ({roleToLabel(user.role)})
                         </option>
                       ))}
                     </select>

@@ -5,16 +5,21 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import {
-  Bell,
   ChevronDown,
   LogOut,
   UserCircle,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { NAV_ITEMS } from "@/components/layout/nav-config";
 import { GlobalSearchBar } from "@/components/layout/GlobalSearchBar";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useIdleLogout } from "@/hooks/useIdleLogout";
+
+// Must match jwt.refresh-expiration on the backend.
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
 
 const getInitials = (firstName?: string, lastName?: string) => {
   const first = firstName?.charAt(0) ?? "";
@@ -100,6 +105,20 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       router.replace("/login");
     }
   }, [isAuthenticated, loading, router]);
+
+  // Auto-logout on client inactivity. The backend already expires
+  // the refresh token after 5 min of no /auth/refresh calls, so
+  // this hook just mirrors that deadline in the UI — the moment
+  // it fires, we blow away the local session and bounce to /login
+  // so the user sees the timeout instead of waiting until their
+  // next click to get a 401.
+  useIdleLogout(
+    () => {
+      void logout();
+      toast.info("You have been logged out due to inactivity.");
+    },
+    { idleMs: IDLE_TIMEOUT_MS, enabled: isAuthenticated && !loading },
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -190,14 +209,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="ml-4 flex items-center gap-2.5">
-            <button
-              type="button"
-              className="relative rounded-full p-1.5 text-slate-500 transition hover:text-slate-700"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white" />
-            </button>
+            <NotificationBell enabled={isAuthenticated && !loading} />
 
             <div className="relative" ref={userMenuRef}>
               <button

@@ -11,7 +11,7 @@ import type { User } from "@/types/user";
 import type { Contact } from "@/types/contact";
 import { mediumOptions, sourceOptions } from "@/components/leads/leadConfig";
 import { contactService } from "@/services/contactService";
-import { getApiMessage } from "@/lib/utils";
+import { getApiMessage, roleToLabel } from "@/lib/utils";
 import { CountryPhoneInput } from "@/components/shared/CountryPhoneInput";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
@@ -621,7 +621,7 @@ export const LeadFormModal = ({
                     <option value="">Select user</option>
                     {assignableUsers.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName}
+                        {user.firstName} {user.lastName} ({roleToLabel(user.role)})
                       </option>
                     ))}
                   </select>
