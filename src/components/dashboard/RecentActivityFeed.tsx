@@ -68,7 +68,10 @@ export const RecentActivityFeed = ({ data, error, onRetry }: RecentActivityFeedP
           const Icon = appearance.Icon;
 
           return (
-            <li key={item.id + index} className="relative rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50/60">
+            <li
+              key={`${item.entityType}-${item.id}-${index}`}
+              className="relative rounded-lg border border-slate-100 px-4 py-3 hover:bg-slate-50/60"
+            >
               <div className="flex items-start gap-3">
                 <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${appearance.bg}`}>
                   <Icon className={`h-4 w-4 ${appearance.color}`} />

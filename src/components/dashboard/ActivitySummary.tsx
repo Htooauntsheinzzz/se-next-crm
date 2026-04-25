@@ -45,7 +45,7 @@ export const ActivitySummary = ({ data, error, onRetry }: ActivitySummaryProps) 
   return (
     <WidgetCard title="Activity Summary">
       <div className="h-[240px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={240} minWidth={1}>
           <BarChart data={chartData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis dataKey="type" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} />

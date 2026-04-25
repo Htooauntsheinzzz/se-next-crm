@@ -24,7 +24,7 @@ import type { Contact, ContactCreateRequest, ContactUpdateRequest, TagDto } from
 import type { User } from "@/types/user";
 import type { SalesTeam } from "@/types/team";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const defaultCountries = ["USA", "UK", "Canada", "Australia", "Singapore", "Thailand", "Myanmar"];
 

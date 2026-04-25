@@ -33,7 +33,7 @@ export const ForecastTrendChart = ({ data }: ForecastTrendChartProps) => {
 
   return (
     <div className="h-[320px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={320} minWidth={1}>
         <ComposedChart
           data={chartData}
           margin={{ top: 8, right: 12, left: 0, bottom: 0 }}

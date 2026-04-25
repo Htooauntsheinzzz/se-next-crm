@@ -13,7 +13,7 @@ export const LeadQualityChart = ({ data }: LeadQualityChartProps) => {
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px]">
       <div className="h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300} minWidth={1}>
           <PieChart>
             <Pie data={data} dataKey="count" nameKey="label" innerRadius={64} outerRadius={100}>
               {data.map((item, index) => (

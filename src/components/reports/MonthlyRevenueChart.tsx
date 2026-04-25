@@ -49,7 +49,7 @@ export const MonthlyRevenueChart = ({ data, loading, error, onRetry }: MonthlyRe
   return (
     <WidgetCard title="Revenue by Month">
       <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={300} minWidth={1}>
           <BarChart data={chartData} margin={{ top: 12, right: 16, left: 6, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "#64748B", fontSize: 12 }} />

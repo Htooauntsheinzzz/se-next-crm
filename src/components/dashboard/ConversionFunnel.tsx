@@ -47,7 +47,7 @@ export const ConversionFunnel = ({ data, error, onRetry }: ConversionFunnelProps
   return (
     <WidgetCard title="Conversion Funnel">
       <div className="h-[240px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={240} minWidth={1}>
           <BarChart data={chartData} margin={{ top: 18, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis dataKey="stage" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} />
