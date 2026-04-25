@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { X } from "lucide-react";
 import { ActivityTypeIcon } from "@/components/activities/ActivityTypeIcon";
 import { activityTypeMeta } from "@/components/activities/activityConfig";
-import { mergeClassNames } from "@/lib/utils";
+import { mergeClassNames, roleToLabel } from "@/lib/utils";
 import type { Activity, ActivityCreateRequest, ActivityType, ActivityUpdateRequest } from "@/types/activity";
 import type { Lead } from "@/types/lead";
 import type { Opportunity } from "@/types/opportunity";
@@ -336,7 +336,7 @@ export const ActivityFormModal = ({
                   .filter((user) => user.active)
                   .map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.firstName} {user.lastName}
+                      {user.firstName} {user.lastName} ({roleToLabel(user.role)})
                     </option>
                   ))}
               </select>

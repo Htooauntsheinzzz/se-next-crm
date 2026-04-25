@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { UserPlus, X } from "lucide-react";
 import type { Lead } from "@/types/lead";
 import type { User } from "@/types/user";
+import { roleToLabel } from "@/lib/utils";
 
 interface AssignLeadModalProps {
   open: boolean;
@@ -100,7 +101,7 @@ export const AssignLeadModal = ({
               <option value="">Select a user</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.firstName} {user.lastName}
+                  {user.firstName} {user.lastName} ({roleToLabel(user.role)})
                 </option>
               ))}
             </select>

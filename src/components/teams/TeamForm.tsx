@@ -167,7 +167,7 @@ export const TeamForm = ({
           ) : null}
           {leaderCandidates.map((user) => (
             <option key={user.id} value={user.id}>
-              {user.firstName} {user.lastName} ({user.role})
+              {user.firstName} {user.lastName}
             </option>
           ))}
         </select>

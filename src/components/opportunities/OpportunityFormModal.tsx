@@ -19,6 +19,7 @@ import type { User } from "@/types/user";
 import type { Contact, TagDto } from "@/types/contact";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { isAdmin, isManager, isRep } from "@/lib/auth/rbac";
+import { roleToLabel } from "@/lib/utils";
 
 const schema = z.object({
   name: z.string().min(1, "Name is required").max(255),
@@ -495,7 +496,7 @@ export const OpportunityFormModal = ({
                     <option value="">Select salesperson</option>
                     {assignableUsers.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.firstName} {user.lastName}
+                        {user.firstName} {user.lastName} ({roleToLabel(user.role)})
                       </option>
                     ))}
                   </select>
