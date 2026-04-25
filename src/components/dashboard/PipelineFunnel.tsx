@@ -46,7 +46,7 @@ export const PipelineFunnel = ({ data, error, onRetry }: PipelineFunnelProps) =>
   return (
     <WidgetCard title="Pipeline Funnel">
       <div className="h-[240px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={240} minWidth={1}>
           <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 8, left: 4, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
             <XAxis type="number" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} />

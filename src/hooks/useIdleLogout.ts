@@ -8,11 +8,18 @@ import { useEffect, useRef } from "react";
  * `idleMs` milliseconds, `onIdle` is called — typically
  * to force-logout the user.
  *
- * This complements the backend's 5-minute refresh token
- * expiry: the backend guarantees the session is *actually*
- * dead after 5 min idle, and this hook makes the browser
- * react to that deadline proactively instead of waiting
- * for the next API call.
+ * This complements the backend's refresh-token expiry: the
+ * backend guarantees the session is *actually* dead after
+ * the refresh window, and this hook makes the browser react
+ * to that deadline proactively instead of waiting for the
+ * next API call.
+ *
+ * Active users do NOT hit this timeout — every authenticated
+ * API call rotates the refresh token forward, so as long as
+ * the user is clicking around the app the session is renewed
+ * silently. Only true idleness (no API calls AND no
+ * mouse / keyboard events for the full window) triggers
+ * logout.
  *
  * Pass `enabled = false` (e.g. when the user is not
  * authenticated) to disable the watcher.
@@ -20,7 +27,7 @@ import { useEffect, useRef } from "react";
 export function useIdleLogout(
   onIdle: () => void,
   {
-    idleMs = 5 * 60 * 1000, // 5 minutes
+    idleMs = 30 * 60 * 1000, // 30 minutes
     enabled = true,
   }: { idleMs?: number; enabled?: boolean } = {},
 ) {

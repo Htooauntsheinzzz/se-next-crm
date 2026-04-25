@@ -18,8 +18,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 
-// Must match jwt.refresh-expiration on the backend.
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+// Must match jwt.refresh-expiration on the backend (30 min).
+// Active users (any API call within the window) keep their session
+// alive via the refresh-token rotation; this hook only fires when
+// the user has truly done nothing for the full window.
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
 const getInitials = (firstName?: string, lastName?: string) => {
   const first = firstName?.charAt(0) ?? "";
@@ -106,12 +109,13 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, loading, router]);
 
-  // Auto-logout on client inactivity. The backend already expires
-  // the refresh token after 5 min of no /auth/refresh calls, so
-  // this hook just mirrors that deadline in the UI — the moment
-  // it fires, we blow away the local session and bounce to /login
-  // so the user sees the timeout instead of waiting until their
-  // next click to get a 401.
+  // Auto-logout on client inactivity. The backend expires the
+  // refresh token after 30 min of no /auth/refresh calls, so this
+  // hook mirrors that deadline in the UI — the moment it fires,
+  // we blow away the local session and bounce to /login so the
+  // user sees the timeout instead of waiting until their next
+  // click to get a 401. Active users keep their session alive
+  // forever via refresh-token rotation; only true idleness fires.
   useIdleLogout(
     () => {
       void logout();

@@ -47,7 +47,7 @@ export const ForecastConfidenceChart = ({ data }: ForecastConfidenceChartProps) 
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="h-[240px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={240} minWidth={1}>
           <PieChart>
             <Pie
               data={chartData}

@@ -36,7 +36,7 @@ import type {
 import type { SalesTeam } from "@/types/team";
 import type { User } from "@/types/user";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const getActiveUsers = (users: User[]) => users.filter((user) => user.active);
 

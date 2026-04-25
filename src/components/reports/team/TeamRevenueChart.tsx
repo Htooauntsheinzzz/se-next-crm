@@ -34,7 +34,7 @@ export const TeamRevenueChart = ({ data }: TeamRevenueChartProps) => {
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={300} minWidth={1}>
         <BarChart
           data={chartData}
           margin={{ top: 8, right: 12, left: 0, bottom: 0 }}

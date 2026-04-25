@@ -40,7 +40,7 @@ export const LeadsBySourceChart = ({ data, error, onRetry }: LeadsBySourceChartP
     <WidgetCard title="Leads by Source">
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="h-[220px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={220} minWidth={1}>
             <PieChart>
               <Pie
                 data={chartData}

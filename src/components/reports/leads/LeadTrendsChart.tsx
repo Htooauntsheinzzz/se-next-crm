@@ -10,7 +10,7 @@ interface LeadTrendsChartProps {
 export const LeadTrendsChart = ({ data }: LeadTrendsChartProps) => {
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={300} minWidth={1}>
         <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
           <XAxis dataKey="monthName" tick={{ fill: "#64748B", fontSize: 12 }} axisLine={false} tickLine={false} />
