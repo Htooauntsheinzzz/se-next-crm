@@ -18,6 +18,7 @@ import { contactService } from "@/services/contactService";
 import { userService } from "@/services/userService";
 import { teamService } from "@/services/teamService";
 import { getApiMessage } from "@/lib/utils";
+import { session } from "@/lib/session";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { isAdmin, isManager, isRep, canMergeContacts } from "@/lib/auth/rbac";
 import type { Contact, ContactCreateRequest, ContactUpdateRequest, TagDto } from "@/types/contact";
@@ -296,6 +297,19 @@ export const ContactListPage = () => {
               onClick={() => void refetch()}
             >
               Retry
+            </button>
+            <button
+              type="button"
+              className="ml-3 font-semibold underline"
+              onClick={() => {
+                // Manual escape hatch: if Retry keeps failing the session is
+                // probably dead. Wipe localStorage + access token, then hard-
+                // navigate to /login so AuthContext re-bootstraps cleanly.
+                session.clearSession();
+                window.location.href = "/login";
+              }}
+            >
+              Sign in again
             </button>
           </div>
         ) : null}
