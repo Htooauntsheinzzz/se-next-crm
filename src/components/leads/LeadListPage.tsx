@@ -13,6 +13,7 @@ import { userService } from "@/services/userService";
 import { teamService } from "@/services/teamService";
 import { contactService } from "@/services/contactService";
 import { getApiMessage } from "@/lib/utils";
+import { session } from "@/lib/session";
 import dynamic from "next/dynamic";
 import { LeadStatusTabs, type LeadTabKey } from "@/components/leads/LeadStatusTabs";
 import { LeadFilters } from "@/components/leads/LeadFilters";
@@ -350,6 +351,16 @@ export const LeadListPage = () => {
               onClick={() => void refetchLeads()}
             >
               Retry
+            </button>
+            <button
+              type="button"
+              className="ml-3 font-semibold underline"
+              onClick={() => {
+                session.clearSession();
+                window.location.href = "/login";
+              }}
+            >
+              Sign in again
             </button>
           </div>
         ) : null}

@@ -17,6 +17,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { userService } from "@/services/userService";
 import { teamService } from "@/services/teamService";
 import { getApiMessage, roleToLabel } from "@/lib/utils";
+import { session } from "@/lib/session";
 import type { Role, User, UserFilters as UserFiltersType } from "@/types/user";
 
 const PAGE_SIZE = 10;
@@ -244,6 +245,16 @@ export const UserListPage = () => {
               onClick={() => void onRefresh()}
             >
               Retry
+            </button>
+            <button
+              type="button"
+              className="ml-3 font-semibold underline"
+              onClick={() => {
+                session.clearSession();
+                window.location.href = "/login";
+              }}
+            >
+              Sign in again
             </button>
           </div>
         ) : null}
