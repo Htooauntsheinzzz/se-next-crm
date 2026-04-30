@@ -18,11 +18,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useIdleLogout } from "@/hooks/useIdleLogout";
 
-// Must match jwt.refresh-expiration on the backend (30 min).
+// Must match jwt.refresh-expiration on the backend (24 hours).
 // Active users (any API call within the window) keep their session
 // alive via the refresh-token rotation; this hook only fires when
 // the user has truly done nothing for the full window.
-const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 24 * 60 * 60 * 1000;
 
 const getInitials = (firstName?: string, lastName?: string) => {
   const first = firstName?.charAt(0) ?? "";
@@ -110,12 +110,13 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   }, [isAuthenticated, loading, router]);
 
   // Auto-logout on client inactivity. The backend expires the
-  // refresh token after 30 min of no /auth/refresh calls, so this
+  // refresh token after 24h of no /auth/refresh calls, so this
   // hook mirrors that deadline in the UI — the moment it fires,
   // we blow away the local session and bounce to /login so the
   // user sees the timeout instead of waiting until their next
   // click to get a 401. Active users keep their session alive
-  // forever via refresh-token rotation; only true idleness fires.
+  // forever via refresh-token rotation; only a full day of
+  // idleness fires this.
   useIdleLogout(
     () => {
       void logout();
@@ -156,7 +157,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell-font flex min-h-screen w-full bg-[#F8F8FB]">
-      <aside className="hidden w-60 flex-col bg-[#8963C6] text-white lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-60 flex-col bg-[#8963C6] text-white lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-white/10 px-4">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white">
             <Image src="/applogo.svg" alt="Sales Surge" width={20} height={20} priority />
@@ -164,7 +165,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           <span className="text-xl font-semibold tracking-tight">Sales Surge</span>
         </div>
 
-        <nav className="space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {currentUserLoading
             ? Array.from({ length: NAV_ITEMS.length }).map((_, index) => (
                 <div key={index} className="h-9 animate-pulse rounded-lg bg-white/15" />
@@ -205,7 +206,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="flex h-16 items-center border-b border-slate-200 bg-white px-4 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex flex-1 items-center gap-6">
             <p className="hidden text-sm font-medium text-slate-600 md:block">{headerTitle}</p>
 

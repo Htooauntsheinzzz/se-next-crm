@@ -25,7 +25,8 @@ import type { Contact, ContactCreateRequest, ContactUpdateRequest, TagDto } from
 import type { User } from "@/types/user";
 import type { SalesTeam } from "@/types/team";
 
-const PAGE_SIZE = 10;
+const LIST_PAGE_SIZE = 10;
+const GRID_PAGE_SIZE = 12;
 
 const defaultCountries = ["USA", "UK", "Canada", "Australia", "Singapore", "Thailand", "Myanmar"];
 
@@ -58,9 +59,11 @@ export const ContactListPage = () => {
   const manager = isManager(currentUser);
   const rep = isRep(currentUser);
 
+  const activePageSize = viewMode === "grid" ? GRID_PAGE_SIZE : LIST_PAGE_SIZE;
+
   const { contacts, counts, currentPage, totalElements, totalPages, loading, error, refetch } = useContacts({
     page,
-    size: PAGE_SIZE,
+    size: activePageSize,
     search,
     country,
     type: typeFilter,
@@ -283,7 +286,10 @@ export const ContactListPage = () => {
             setAssignedTo(value);
             setPage(0);
           }}
-          onViewModeChange={setViewMode}
+          onViewModeChange={(mode) => {
+            setViewMode(mode);
+            setPage(0);
+          }}
         />
 
         <p className="text-sm text-slate-500">{showingCountText}</p>
@@ -322,7 +328,7 @@ export const ContactListPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={totalElements}
-            pageSize={PAGE_SIZE}
+            pageSize={activePageSize}
             onPageChange={setPage}
             onCreate={() => setShowCreateModal(true)}
             onEdit={openEdit}
@@ -338,7 +344,7 @@ export const ContactListPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             totalElements={totalElements}
-            pageSize={PAGE_SIZE}
+            pageSize={activePageSize}
             onPageChange={setPage}
             onCreate={() => setShowCreateModal(true)}
             onEdit={openEdit}

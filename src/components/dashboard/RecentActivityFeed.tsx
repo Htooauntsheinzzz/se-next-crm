@@ -54,15 +54,8 @@ export const RecentActivityFeed = ({ data, error, onRetry }: RecentActivityFeedP
   const visibleItems = data.slice(0, 10);
 
   return (
-    <WidgetCard
-      title="Recent Activity Feed"
-      action={
-        <button type="button" className="text-sm font-medium text-[#6366F1] hover:underline">
-          View All
-        </button>
-      }
-    >
-      <ul className="space-y-3">
+    <WidgetCard title="Recent Activity Feed">
+      <ul className="max-h-[400px] space-y-3 overflow-y-auto pr-1">
         {visibleItems.map((item, index) => {
           const appearance = getEntityAppearance(item.entityType);
           const Icon = appearance.Icon;
