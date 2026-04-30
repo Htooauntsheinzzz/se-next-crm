@@ -27,7 +27,7 @@ import { useEffect, useRef } from "react";
 export function useIdleLogout(
   onIdle: () => void,
   {
-    idleMs = 30 * 60 * 1000, // 30 minutes
+    idleMs = 24 * 60 * 60 * 1000, // 24 hours
     enabled = true,
   }: { idleMs?: number; enabled?: boolean } = {},
 ) {
